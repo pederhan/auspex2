@@ -487,6 +487,14 @@ idna = {version = "*", optional = true, markers = "extra == \"idna2008\""}
 idna2008 = ["idna"]
 
 [[package]]
+name = "sanitize-filename"
+version = "1.2.0"
+description = "A permissive filename sanitizer."
+category = "main"
+optional = false
+python-versions = "~=3.7"
+
+[[package]]
 name = "setuptools-scm"
 version = "7.0.5"
 description = "the blessed package to manage your versions by scm tags"
@@ -574,7 +582,7 @@ dev = ["pytest (>=4.6.2)", "black (>=19.3b0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "8a322fffdaca9fbfed288b021a63fe477bc5b60d7144795fc3bdb2fe351289b8"
+content-hash = "102ad12fafd53ae1f5badeb33bb26eb5bd5bd5715e9c12d57277ba5096710e44"
 
 [metadata.files]
 anyio = []
@@ -672,6 +680,7 @@ rfc3986 = [
     {file = "rfc3986-1.5.0-py2.py3-none-any.whl", hash = "sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97"},
     {file = "rfc3986-1.5.0.tar.gz", hash = "sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835"},
 ]
+sanitize-filename = []
 setuptools-scm = []
 six = []
 sniffio = []
