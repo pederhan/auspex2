@@ -3,18 +3,11 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np  # noqa?
-from harborapi import HarborAsyncClient
+from harborapi import HarborAsyncClient, HarborClient
 from harborapi.models.scanner import HarborVulnerabilityReport, Severity
 
 from .colors import get_color
 from .models import PlotData, PlotType
-
-client = HarborAsyncClient(
-    url="https://harbor-test.uio.no/api/v2.0",
-    credentials_file="robot.json",
-    logging=True,
-)
-
 
 def piechart_severity(
     report: HarborVulnerabilityReport, basename: Optional[str] = None
@@ -46,30 +39,19 @@ def piechart_severity(
 
     size = 0.3
 
-    labels = set()  # type: set[Severity]
+    labels = []  # type: list[Severity]
     values = []  # type: list[int]
     # "dumb" iteration to ensure order is correct (not necessary?)
     for label, value in report.distribution.items():
-        labels.add(label)
+        labels.append(label)
         values.append(value)
 
     if all(v == 0 for v in values):
         return p
     colors = []  # type: list[tuple[float, float, float, float]]
-    for label in labels:
-        colors.append(get_color(label))
-
-    # def get_colors(cmapname: str) -> tuple[int, ...]:
-    #     return plt.colormaps[cmapname]([150, 125, 100])
-    #     # plt.colormaps()
-
-    # low = get_colors("Greens")
-    # medium = get_colors("Yellows")  # assert this is init
-    # high = get_colors("Oranges")
-    # critical = get_colors("Reds")
-    # colors = [low, medium, high, critical]
-
-    # colors = [low[0], medium[0], high[0], critical[0]]
+    for severity in report.distribution.keys():
+        colors.append(get_color(severity))
+    colors = [get_color(severity) for severity in report.distribution.keys()]
 
     def labelfunc(pct: float, allvals: list[int]) -> str:
         absolute = int(np.round(pct / 100.0 * np.sum(allvals)))
@@ -106,16 +88,3 @@ def piechart_severity(
     plt.show(block=True)
     return p
 
-
-async def main() -> None:
-    # artifacts = await client.get_artifacts(
-    #     "library", "vulntest", query="tags=latest", with_scan_overview=True
-    # )
-    # print(artifacts)
-    report = await client.get_artifact_vulnerabilities("library", "vulntest", "latest")
-    if report:
-        piechart_severity(report)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
