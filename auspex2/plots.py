@@ -1,23 +1,28 @@
 import asyncio
+from pathlib import Path
 from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np  # noqa?
 from harborapi import HarborAsyncClient, HarborClient
 from harborapi.models.scanner import HarborVulnerabilityReport, Severity
+from sanitize_filename import sanitize
+
+from auspex2.api import ArtifactInfo
 
 from .colors import get_color
 from .models import PlotData, PlotType
 
+
 def piechart_severity(
-    report: HarborVulnerabilityReport, basename: Optional[str] = None
+    artifact: ArtifactInfo, basename: Optional[str] = None
 ) -> PlotData:
     """Generates a pie chart of the severity distribution of vulnerabilities.
     Parameters
     ----------
-    report : `ScanType`
-        A report, either a single report or an aggregate report.
-    basename : `Optional[str]`
+    artifact : ArtifactInfo
+        An object containing the artifact and its vulnerabilities.
+    basename : Optional[str]
         The basename of the output file.
     Returns
     -------
@@ -25,6 +30,8 @@ def piechart_severity(
         A plot data object containing everything required to insert
         the plot into the report.
     """
+    report = artifact.report
+    assert report is not None  # ideally do away with this
 
     title = f"Distribution of Vulnerabilities by Severity"
     p = PlotData(
@@ -78,13 +85,53 @@ def piechart_severity(
 
     # Save fig and store its filename
     # TODO: fix filename
-    # path = save_fig(fig, report, basename, "piechart_severity")
-    # p.path = path
+    path = save_fig(fig, artifact, basename, "piechart_severity")
+    p.path = path
     p.description = (
         f"The pie chart shows the distribution of vulnerabilities by severity. "
         "Severities are grouped by colour, as described by the legend. "
         "Each slice of the pie denotes the percentage of the total, and sum of vulnerabilities for each severity."
     )
-    plt.show(block=True)
+    # plt.show(block=True)
     return p
 
+
+def save_fig(
+    fig: plt.Figure,
+    artifact: ArtifactInfo,
+    basename: Optional[str],
+    suffix: str,
+    filetype: str = "pdf",
+    close_after: bool = True,
+) -> Path:
+    """Saves a figure to a file.
+    Parameters
+    ----------
+    fig : plt.Figure
+        The figure to save.
+    basename : Optional[str]
+        The basename of the output file.
+    suffix : str
+        The filename suffix to add to the basename.
+    filetype : str
+        The filetype to save the figure as.
+    close_after : bool
+        Whether to close the figure after saving.
+    Returns
+    -------
+    `Path`
+        Path to the generated figure.
+    """
+    if not basename:
+        basename = f"{artifact.repository.name}"
+        if artifact.artifact.digest:
+            basename += f"_{artifact.artifact.digest}"
+    fig_filename = f"{basename}_{suffix}"
+    if filetype:
+        fig_filename = f"{fig_filename}.{filetype}"
+    fig_filename = sanitize(fig_filename)
+    path = Path(fig_filename).absolute()
+    fig.savefig(str(path))
+    if close_after:
+        plt.close(fig)
+    return path
