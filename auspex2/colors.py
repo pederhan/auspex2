@@ -6,7 +6,7 @@ from matplotlib.cm import get_cmap
 from matplotlib.colors import ListedColormap
 
 
-COLORS = {
+SEVERITY_COLORS = {
     Severity.critical: "Reds",
     Severity.high: "Oranges",
     Severity.medium: "Yellows",
@@ -36,4 +36,4 @@ except ValueError as e:
 
 def get_color(severity: Severity) -> tuple[float, float, float, float]:
     # return mpl.colors.to_rgb(mpl.cm.get_cmap(colors[severity])(0.5))
-    return get_cmap(COLORS.get(severity))(0.5)  # type: ignore
+    return get_cmap(SEVERITY_COLORS.get(severity))(0.5)  # type: ignore
