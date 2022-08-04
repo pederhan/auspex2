@@ -46,6 +46,7 @@ async def get_artifacts(
     """
     if not repos:
         repos = await client.get_repositories()
+    # Fetch artifacts from each repository concurrently
     coros = [_get_repo_artifacts(client, repo, tags=tags, **kwargs) for repo in repos]
     a = await asyncio.gather(*coros)
     return list(itertools.chain.from_iterable(a))
@@ -54,6 +55,23 @@ async def get_artifacts(
 async def _get_repo_artifacts(
     client: HarborAsyncClient, repo: Repository, tags: Optional[List[str]], **kwargs
 ) -> List[ArtifactInfo]:
+    """Fetch all artifacts in a repository.
+
+    Parameters
+    ----------
+    client : HarborAsyncClient
+        The client to use for the API call.
+    repo : Repository
+        The repository to get the artifacts from.
+    tags : Optional[List[str]]
+        The tag(s) to filter the artifacts by.
+
+    Returns
+    -------
+    List[ArtifactInfo]
+        A list of ArtifactInfo objects, combining each artifact with its
+        repository.
+    """
     s = repo.split_name()
     if not s:
         return []  # TODO: add warning or raise error
@@ -87,11 +105,14 @@ async def get_artifact_vulnerabilities(
         Additional arguments to pass to the `HarborAsyncClient.get_artifacts` method.
     """
     repos = await client.get_repositories()
+
     # We first retrieve all artifacts before we get the vulnerability reports
     # since the reports themselves lack information about the artifact.
     artifacts = await get_artifacts(client, repos=repos, tags=tags, **kwargs)
 
-    # We must iterate through all artifacts to get vulnerability reports for each one
+    # We must fetch each report individually, since the API doesn't support
+    # getting all reports in one call.
+    # This is done concurrently to speed up the process.
     coros = [_get_artifact_report(client, artifact) for artifact in artifacts]
     artifacts = await asyncio.gather(*coros)
     return artifacts  # type: ignore # why does pylance report this as tuple[()]?
