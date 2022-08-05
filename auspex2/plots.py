@@ -1,22 +1,43 @@
 import asyncio
+from enum import Enum
+from importlib.metadata import distribution
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np  # noqa?
-from harborapi import HarborAsyncClient, HarborClient
-from harborapi.models.scanner import HarborVulnerabilityReport, Severity
+from harborapi.models.scanner import Severity
 from sanitize_filename import sanitize
 
-from auspex2.api import ArtifactInfo
+from .api import ArtifactInfo
+from .utils import get_distribution, plotdata_from_dist
 
 from .colors import get_color
-from .models import PlotData, PlotType
+from .models import Plot, PlotType
+
+
+class PieChartStyle(Enum):
+    DEFAULT = "default"
+    FIXABLE = "fixable"
+    UNFIXABLE = "unfixable"
+
+    @classmethod
+    def get_style(cls, style: Union[str, "PieChartStyle"]) -> "PieChartStyle":
+        if isinstance(style, str):
+            try:
+                return cls(style)
+            except ValueError as e:
+                raise ValueError(f"Unknown Pie Chart style {style}") from e
+        return style
 
 
 def piechart_severity(
-    artifact: ArtifactInfo, basename: Optional[str] = None
-) -> PlotData:
+    artifact: ArtifactInfo,
+    basename: Optional[str] = None,
+    directory: Optional[Union[str, Path]] = None,
+    style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
+) -> Plot:
     """Generates a pie chart of the severity distribution of vulnerabilities.
     Parameters
     ----------
@@ -30,11 +51,18 @@ def piechart_severity(
         A plot data object containing everything required to insert
         the plot into the report.
     """
+    style = PieChartStyle.get_style(style)
+
     report = artifact.report
     assert report is not None  # ideally do away with this
 
-    title = f"Distribution of Vulnerabilities by Severity"
-    p = PlotData(
+    if style != PieChartStyle.DEFAULT:
+        extra = f"{style.value.title()} "
+    else:
+        extra = ""
+
+    title = f"Distribution of {extra}Vulnerabilities by Severity"
+    p = Plot(
         title=title,
         description="No vulnerabilities found.",
         caption=title,
@@ -46,19 +74,18 @@ def piechart_severity(
 
     size = 0.3
 
-    labels = []  # type: list[Severity]
-    values = []  # type: list[int]
-    # "dumb" iteration to ensure order is correct (not necessary?)
-    for label, value in report.distribution.items():
-        labels.append(label)
-        values.append(value)
+    if style == PieChartStyle.FIXABLE:
+        distribution = get_distribution(report.fixable)
+    elif style == PieChartStyle.UNFIXABLE:
+        distribution = get_distribution(report.unfixable)
+    else:
+        distribution = report.distribution
 
-    if all(v == 0 for v in values):
+    plotdata = plotdata_from_dist(distribution)
+    if all(v == 0 for v in plotdata.values):
         return p
-    colors = []  # type: list[tuple[float, float, float, float]]
-    for severity in report.distribution.keys():
-        colors.append(get_color(severity))
-    colors = [get_color(severity) for severity in report.distribution.keys()]
+
+    colors = [get_color(severity) for severity in plotdata.labels]
 
     def labelfunc(pct: float, allvals: list[int]) -> str:
         absolute = int(np.round(pct / 100.0 * np.sum(allvals)))
@@ -66,18 +93,19 @@ def piechart_severity(
 
     # Outer pie chart
     wedges, *_ = ax.pie(
-        values,
+        plotdata.values,
         radius=1,
         colors=colors,
         wedgeprops=dict(width=0.7, edgecolor="black", linewidth=0.5),
         startangle=90,
         counterclock=False,
-        autopct=lambda pct: labelfunc(pct, values),
+        autopct=lambda pct: labelfunc(pct, plotdata.values),
     )
-    #
+
+    # Add legend
     ax.legend(
         wedges,
-        labels,
+        [l.name for l in plotdata.labels],
         title=f"Severity Distribution for {report.artifact}",
         loc="upper left",
         bbox_to_anchor=(1, 0, 0.5, 1),
@@ -85,7 +113,13 @@ def piechart_severity(
 
     # Save fig and store its filename
     # TODO: fix filename
-    path = save_fig(fig, artifact, basename, "piechart_severity")
+    path = save_fig(
+        fig,
+        artifact,
+        basename=basename,
+        directory=directory,
+        suffix=f"{style.name}_piechart_severity",
+    )
     p.path = path
     p.description = (
         f"The pie chart shows the distribution of vulnerabilities by severity. "
@@ -97,10 +131,11 @@ def piechart_severity(
 
 
 def save_fig(
-    fig: plt.Figure,
+    fig: Figure,
     artifact: ArtifactInfo,
-    basename: Optional[str],
-    suffix: str,
+    basename: Optional[str] = None,
+    suffix: Optional[str] = None,
+    directory: Optional[Union[str, Path]] = None,
     filetype: str = "pdf",
     close_after: bool = True,
 ) -> Path:
@@ -125,13 +160,20 @@ def save_fig(
     if not basename:
         basename = f"{artifact.repository.name}"
         if artifact.artifact.digest:
-            basename += f"_{artifact.artifact.digest}"
+            digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
+            basename += f"_{digest}"
+
     fig_filename = f"{basename}_{suffix}"
     if filetype:
         fig_filename = f"{fig_filename}.{filetype}"
+
+    dirpath = Path(directory) if directory else Path(".")
+
     fig_filename = sanitize(fig_filename)
-    path = Path(fig_filename).absolute()
+    path = (dirpath / Path(fig_filename)).absolute()
+
     fig.savefig(str(path))
     if close_after:
         plt.close(fig)
+
     return path
