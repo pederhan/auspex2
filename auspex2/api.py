@@ -16,7 +16,7 @@ class ArtifactInfo(BaseModel):
 
     artifact: Artifact
     repository: Repository
-    report: Optional[HarborVulnerabilityReport] = None
+    report: HarborVulnerabilityReport = HarborVulnerabilityReport()  # type: ignore # why complain?
     # NOTE: add Project?
 
 
@@ -162,11 +162,12 @@ async def _get_artifact_report(
         repo_name,
         tag,
     )
-    if not report:
+    if report is None:
         logger.debug(
             "No vulnerabilities found for artifact '{}'".format(
                 f"{project_name}/{repo_name}:{tag}"
             )
         )
-    artifact.report = report
+    else:
+        artifact.report = report
     return artifact
