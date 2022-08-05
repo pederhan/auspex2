@@ -39,17 +39,25 @@ def piechart_severity(
     style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
 ) -> Plot:
     """Generates a pie chart of the severity distribution of vulnerabilities.
+
     Parameters
     ----------
     artifact : ArtifactInfo
-        An object containing the artifact and its vulnerabilities.
+        Artifact to generate the pie chart for.
     basename : Optional[str]
-        The basename of the output file.
+        Filename of the figure, by default None.
+    directory : Optional[Union[str, Path]], optional
+        Directory to save the figure in, by default None
+    style : Union[PieChartStyle, str], optional
+        Which vulnerabilities to include in the pie chart.
+        By default, all vulnerabilities are included.
+        If `PieChartStyle.FIXABLE` or "fixable", only vulnerabilities that can be fixed are included.
+        If `PieChartStyle.UNFIXABLE` or "unfixable", only vulnerabilities that cannot be fixed are included.
+
     Returns
     -------
-    `PlotData`
-        A plot data object containing everything required to insert
-        the plot into the report.
+    Plot
+        Plot object with metadata for the generated figure.
     """
     style = PieChartStyle.get_style(style)
 
@@ -122,7 +130,7 @@ def piechart_severity(
     )
     p.path = path
     p.description = (
-        f"The pie chart shows the distribution of vulnerabilities by severity. "
+        f"The pie chart shows the distribution of {extra}vulnerabilities by severity. "
         "Severities are grouped by colour, as described by the legend. "
         "Each slice of the pie denotes the percentage of the total, and sum of vulnerabilities for each severity."
     )
@@ -140,22 +148,29 @@ def save_fig(
     close_after: bool = True,
 ) -> Path:
     """Saves a figure to a file.
+
     Parameters
     ----------
-    fig : plt.Figure
+    fig : Figure
         The figure to save.
+    artifact : ArtifactInfo
+        Information about the artifact used to generate the figure.
     basename : Optional[str]
-        The basename of the output file.
-    suffix : str
-        The filename suffix to add to the basename.
+        The base name of the figure's filename.
+        If omitted, uses the artifact's name and digest, by default None
+    suffix : Optional[str]
+        Suffix to append to filename
+    directory : Optional[Union[str, Path]]
+        The directory to save the file to, by default None
     filetype : str
-        The filetype to save the figure as.
+        File suffix, by default "pdf"
     close_after : bool
-        Whether to close the figure after saving.
+        Close figure after saving, by default True
+
     Returns
     -------
-    `Path`
-        Path to the generated figure.
+    Path
+        Path to the saved figure.
     """
     if not basename:
         basename = f"{artifact.repository.name}"
@@ -163,7 +178,10 @@ def save_fig(
             digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
             basename += f"_{digest}"
 
-    fig_filename = f"{basename}_{suffix}"
+    fig_filename = basename
+
+    if suffix:
+        fig_filename = f"{basename}_{suffix}"
     if filetype:
         fig_filename = f"{fig_filename}.{filetype}"
 

@@ -43,6 +43,11 @@ async def get_artifacts(
         The tag(s) to filter the artifacts by.
     kwargs : Any
         Additional arguments to pass to the `HarborAsyncClient.get_artifacts` method.
+
+    Returns
+    -------
+    List[ArtifactInfo]
+        A list of ArtifactInfo objects, without the .report field populated.
     """
     if not repos:
         repos = await client.get_repositories()
@@ -103,6 +108,12 @@ async def get_artifact_vulnerabilities(
         The tag(s) to filter the artifacts by.
     kwargs : Any
         Additional arguments to pass to the `HarborAsyncClient.get_artifacts` method.
+
+    Returns
+    -------
+    List[ArtifactInfo]
+        A list of ArtifactInfo objects, where the .report field is populated with the
+        vulnerability report.
     """
     repos = await client.get_repositories()
 
@@ -127,12 +138,13 @@ async def _get_artifact_report(
     ----------
     client : HarborAsyncClient
         The client to use for the API call.
-    artifact : Artifact
-        The artifact to get the report for.
-    project_name : str
-        The name of the project the artifact belongs to.
-    repo_name : str
-        The name of the repository the artifact belongs to.
+    artifact : ArtifactInfo
+        The artifact to get the vulnerability report for.
+
+    Returns
+    -------
+    ArtifactInfo
+        The `ArtifactInfo` object with the vulnerability report attached.
     """
     tag = artifact.artifact.tags[0].name if artifact.artifact.tags else None
     if not tag:
