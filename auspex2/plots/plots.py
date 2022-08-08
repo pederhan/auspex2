@@ -12,13 +12,13 @@ from sanitize_filename import sanitize
 
 from ..api import ArtifactInfo
 from ..colors import get_color
-from ..report import ArtifactReporter
+from ..report import ArtifactReport
 from ..utils import get_distribution, plotdata_from_dist
 from .models import PieChartStyle, Plot, PlotType
 
 
 def piechart_severity(
-    report: ArtifactReporter,
+    report: ArtifactReport,
     # prefix: Optional[str] = "severity",
     directory: Optional[Union[str, Path]] = None,
     style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
@@ -27,7 +27,7 @@ def piechart_severity(
 
     Parameters
     ----------
-    artifact : ArtifactReporter
+    artifact : ArtifactReport
         Artifact to generate the pie chart for.
     prefix : Optional[str]
         Prefix for the filename of the figure, by default `"severity"`.

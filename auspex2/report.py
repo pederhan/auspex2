@@ -38,7 +38,7 @@ def remove_duplicate_artifacts(artifacts: List[ArtifactInfo]) -> Iterable[Artifa
 
 # @dataclass
 # TODO: rename to something more appropriate
-class ArtifactReporter:
+class ArtifactReport:
     artifacts: List[ArtifactInfo]
 
     def __init__(
@@ -54,9 +54,6 @@ class ArtifactReporter:
     def is_aggregate(self) -> bool:
         return len(self.artifacts) > 1
 
-    # NOTE: we could implement these methods with some dirty metaprogramming
-    #       but let's keep it simple for now
-
     @property
     def cvss(self) -> List[ArtifactCVSS]:
         cvss = []  # type: List[ArtifactCVSS]
@@ -71,6 +68,9 @@ class ArtifactReporter:
             )
             cvss.append(ArtifactCVSS(c, a))
         return cvss
+
+    # NOTE: we could implement these methods with some dirty metaprogramming
+    #       but let's keep it simple for now
 
     @property
     def fixable(self) -> Iterable[Vulnerability]:
