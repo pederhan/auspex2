@@ -13,21 +13,32 @@
     <title>My Webpage</title>
 </head>
 
-<body>
-    <table>
-        <tr>
-            {% for col in table.header %}
-            <th>{{ col }}</th>
-            {% endfor %}
-        </tr>
-        {% for row in table.rows %}
-        <tr>
-            {% for col in row %}
-            <td>{{ col }}</td>
-            {% endfor %}
-        </tr>
+{% macro table(tb) -%}
+<h1>{{ tb.title }}</h1>
+<table>
+    <tr>
+        {% for col in tb.header %}
+        <th>{{ col }}</th>
         {% endfor %}
-    </table>
-</body>
+    </tr>
+    {% for row in tb.rows %}
+    <tr>
+        {% for col in row %}
+        {% if "Hyperlink" in col.__class__.__name__ %}
+        <td><a href="{{ col.url }}">{{ col.text }}</a></td>
+        {% else %}
+        <td>{{ col }}</td>
+        {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{%- endmacro %}
+
+<body>
+    {{ table(info_table) }}
+    {{ table(stats_table) }}
+    {{ table(top_vulns) }}
+    {{ table(top_vulns_fix) }}
 
 </html>
