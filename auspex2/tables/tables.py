@@ -94,3 +94,78 @@ def _get_report_statistics_row(cvss: ArtifactCVSS) -> list[Union[str, int, float
         total,
     ]
     return row
+
+
+def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -> Table:
+    """Generates the data used to display the top vulnerabilities in a report.
+
+    Parameters
+    ----------
+    report : ArtifactReport
+        An artifact report to display the top vulnerabilities for.
+    fixable : bool
+        Whether or not to only display fixable vulnerabilities.
+    maxrows : int
+        Maximum number of rows to return.
+
+    Returns
+    -------
+    `TableData`
+        A named tuple containing the data used to display the top vulnerabilities.
+    """
+    header = [
+        "Image",
+        "Vulnerability",  # Name
+        "CVSS ID",  # ID
+        "CVSS Score",  # 0-10
+        "Severity",
+        "Upgradable",  # Yes/No
+    ]
+
+    rows = []
+    reports = []
+
+    # Get list of vulnerabilities per image
+    for a in report.artifacts:
+        most_severe = a.report.top_vulns(maxrows, fixable=fixable)
+        for vuln in most_severe:
+            # Vuln name (ID)
+            name = vuln.description or "-"
+            # Vuln URL
+            # url = vuln.url or "-"
+            vuln_id = vuln.id or ""
+            url = Hyperlink(
+                "https://nvd.nist.gov/vuln/detail/{}".format(vuln_id), vuln_id
+            )
+
+            # Vuln score
+            score = vuln.get_cvss_score(a.report.scanner)
+
+            # Severity
+            severity = vuln.get_severity(a.report.scanner).name.title()
+
+            # Upgradable
+            upgradable = "Yes" if vuln.fixable else "No"
+
+            row = [
+                a.repository.name,
+                name,
+                url,
+                format_decimal(score),  # TODO: format
+                severity,
+                upgradable,
+            ]
+            rows.append(row)
+
+    fx = " Fixable " if fixable else " "
+    # ag = " by Image" if is_aggregate else ""
+    title = f"Most Critical{fx}Vulnerabilities"
+    description = (
+        "Lists the found vulnerabilities with highest CVSS scores. "
+        "The CVSS ID is a hyperlink to official documentation for that vulnerability. "
+        "'Upgradeable' denotes whether the found vulnerability has a known fix ie. a new version of a package or library. "
+    )
+    if fixable:
+        description += "Only vulnerabilities that are fixable are listed."
+
+    return Table(title, header, rows, description=description)
