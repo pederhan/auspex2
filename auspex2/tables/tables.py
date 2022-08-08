@@ -1,7 +1,8 @@
 from harborapi.models.scanner import HarborVulnerabilityReport
+
+from ..api import ArtifactInfo
+from ..cve import highest_severity
 from .models import Table
-from .api import ArtifactInfo
-from .cve import highest_severity
 
 
 def statistics_table(artifact: ArtifactInfo) -> Table:
@@ -14,8 +15,8 @@ def statistics_table(artifact: ArtifactInfo) -> Table:
 
     Returns
     -------
-    `TableData`
-        Contents and metadat for the constructed table.
+    `Table`
+        The generated table data.
     """
     columns = [
         "Median CVSS",

@@ -1,11 +1,10 @@
 import asyncio
 import itertools
-from typing import Any, Coroutine, Dict, List, TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, Tuple
 
-
-from harborapi.models import Artifact, Repository, Project
-from harborapi.models.scanner import HarborVulnerabilityReport
 from harborapi import HarborAsyncClient
+from harborapi.models import Artifact, Project, Repository
+from harborapi.models.scanner import HarborVulnerabilityReport
 from loguru import logger
 from pydantic import BaseModel
 
@@ -98,7 +97,8 @@ async def get_artifact_vulnerabilities(
     """Fetch all artifact vulnerability reports in all projects.
 
     The Harbor API doesn't support getting all artifacts in all projects at once,
-    so we have to retrieve all artifacts in each repository and then combine them.
+    so we have to retrieve all artifacts in each repository and then combine them
+    into a single list of ArtifactInfo objects afterwards.
 
     Parameters
     ----------

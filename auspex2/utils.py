@@ -1,8 +1,9 @@
 from collections import Counter
 from typing import List
-from harborapi.models.scanner import VulnerabilityItem, Severity
 
-from .models import PlotData
+from harborapi.models.scanner import Severity, VulnerabilityItem
+
+from .plots import PlotData
 
 
 def get_distribution(vulnerabilities: List[VulnerabilityItem]) -> Counter[Severity]:

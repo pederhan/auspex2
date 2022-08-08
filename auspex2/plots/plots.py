@@ -5,15 +5,14 @@ from pathlib import Path
 from typing import Optional, Union
 
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import numpy as np  # noqa?
 from harborapi.models.scanner import Severity
+from matplotlib.figure import Figure
 from sanitize_filename import sanitize
 
-from .api import ArtifactInfo
-from .utils import get_distribution, plotdata_from_dist
-
-from .colors import get_color
+from ..api import ArtifactInfo
+from ..colors import get_color
+from ..utils import get_distribution, plotdata_from_dist
 from .models import Plot, PlotType
 
 
@@ -34,7 +33,7 @@ class PieChartStyle(Enum):
 
 def piechart_severity(
     artifact: ArtifactInfo,
-    basename: Optional[str] = None,
+    prefix: Optional[str] = "sevrerity",
     directory: Optional[Union[str, Path]] = None,
     style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
 ) -> Plot:
@@ -44,11 +43,11 @@ def piechart_severity(
     ----------
     artifact : ArtifactInfo
         Artifact to generate the pie chart for.
-    basename : Optional[str]
-        Filename of the figure, by default None.
+    prefix : Optional[str]
+        Prefix for the filename of the figure, by default `"severity"`.
     directory : Optional[Union[str, Path]], optional
         Directory to save the figure in, by default None
-    style : Union[PieChartStyle, str], optional
+    style : Union[PieChartStyle, str]
         Which vulnerabilities to include in the pie chart.
         By default, all vulnerabilities are included.
         If `PieChartStyle.FIXABLE` or "fixable", only vulnerabilities that can be fixed are included.
@@ -124,7 +123,7 @@ def piechart_severity(
     path = save_fig(
         fig,
         artifact,
-        basename=basename,
+        prefix=prefix,
         directory=directory,
         suffix=f"{style.name}_piechart_severity",
     )
@@ -141,7 +140,7 @@ def piechart_severity(
 def save_fig(
     fig: Figure,
     artifact: ArtifactInfo,
-    basename: Optional[str] = None,
+    prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     directory: Optional[Union[str, Path]] = None,
     filetype: str = "pdf",
@@ -155,8 +154,8 @@ def save_fig(
         The figure to save.
     artifact : ArtifactInfo
         Information about the artifact used to generate the figure.
-    basename : Optional[str]
-        The base name of the figure's filename.
+    prefix : Optional[str]
+        The prefix for the of the figure's filename.
         If omitted, uses the artifact's name and digest, by default None
     suffix : Optional[str]
         Suffix to append to filename
@@ -172,22 +171,26 @@ def save_fig(
     Path
         Path to the saved figure.
     """
-    if not basename:
-        basename = f"{artifact.repository.name}"
-        if artifact.artifact.digest:
-            digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
-            basename += f"_{digest}"
+    if artifact.repository.name:
+        fname = f"{artifact.repository.name}"
+    else:
+        fname = ""
 
-    fig_filename = basename
+    fname = f"{artifact.repository.name}"
+    if artifact.artifact.digest:
+        digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
+        fname = f"{fname}_{digest}"
 
+    if prefix:
+        fname += f"_{prefix}"
     if suffix:
-        fig_filename = f"{basename}_{suffix}"
+        fname += f"_{suffix}"
     if filetype:
-        fig_filename = f"{fig_filename}.{filetype}"
+        fname += f".{filetype}"
 
     dirpath = Path(directory) if directory else Path(".")
 
-    fig_filename = sanitize(fig_filename)
+    fig_filename = sanitize(fname)
     path = (dirpath / Path(fig_filename)).absolute()
 
     fig.savefig(str(path))

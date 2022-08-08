@@ -1,11 +1,10 @@
 from typing import Union
-from matplotlib.cm import get_cmap, register_cmap
-from harborapi.models.scanner import Severity
-import matplotlib as mpl
-import numpy as np  # noqa?
-from matplotlib.cm import get_cmap
-from matplotlib.colors import ListedColormap
 
+import matplotlib as mpl
+import numpy as np
+from harborapi.models.scanner import Severity
+from matplotlib.cm import get_cmap, register_cmap
+from matplotlib.colors import ListedColormap
 
 SEVERITY_COLORS = {
     Severity.critical: "Reds",
