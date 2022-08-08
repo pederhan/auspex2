@@ -153,35 +153,6 @@ def cve_statistics(report: ArtifactReport) -> Table:
     )
 
 
-def _get_report_statistics_row(cvss: ArtifactCVSS) -> list[Union[str, int, float]]:
-    # Alias for shorter variable names
-    report = cvss.artifact.report
-
-    # Columns:
-    name = cvss.artifact.repository.name
-    dist = report.distribution
-    # Total number of vulnerabilities
-    low = dist.get(Severity.low, 0)
-    medium = dist.get(Severity.medium, 0)
-    high = dist.get(Severity.high, 0)
-    critical = dist.get(Severity.critical, 0)
-    total = low + medium + high + critical
-
-    row = [
-        name,
-        format_decimal(cvss.cvss.median),
-        format_decimal(cvss.cvss.mean),
-        format_decimal(cvss.cvss.stdev),
-        format_decimal(cvss.cvss.max),
-        low,
-        medium,
-        high,
-        critical,
-        total,
-    ]
-    return row
-
-
 def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -> Table:
     """Generates the data used to display the top vulnerabilities in a report.
 
