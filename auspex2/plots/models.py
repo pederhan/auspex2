@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar, Union
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -32,3 +32,18 @@ class Plot:
     description: str = ""
     caption: str = ""
     path: Optional[Path] = None
+
+
+class PieChartStyle(Enum):
+    DEFAULT = "default"
+    FIXABLE = "fixable"
+    UNFIXABLE = "unfixable"
+
+    @classmethod
+    def get_style(cls, style: Union[str, "PieChartStyle"]) -> "PieChartStyle":
+        if isinstance(style, str):
+            try:
+                return cls(style)
+            except ValueError as e:
+                raise ValueError(f"Unknown Pie Chart style {style}") from e
+        return style

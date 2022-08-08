@@ -12,28 +12,14 @@ from sanitize_filename import sanitize
 
 from ..api import ArtifactInfo
 from ..colors import get_color
+from ..report import ArtifactReporter
 from ..utils import get_distribution, plotdata_from_dist
-from .models import Plot, PlotType
-
-
-class PieChartStyle(Enum):
-    DEFAULT = "default"
-    FIXABLE = "fixable"
-    UNFIXABLE = "unfixable"
-
-    @classmethod
-    def get_style(cls, style: Union[str, "PieChartStyle"]) -> "PieChartStyle":
-        if isinstance(style, str):
-            try:
-                return cls(style)
-            except ValueError as e:
-                raise ValueError(f"Unknown Pie Chart style {style}") from e
-        return style
+from .models import PieChartStyle, Plot, PlotType
 
 
 def piechart_severity(
-    artifact: ArtifactInfo,
-    prefix: Optional[str] = "sevrerity",
+    report: ArtifactReporter,
+    # prefix: Optional[str] = "severity",
     directory: Optional[Union[str, Path]] = None,
     style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
 ) -> Plot:
@@ -41,7 +27,7 @@ def piechart_severity(
 
     Parameters
     ----------
-    artifact : ArtifactInfo
+    artifact : ArtifactReporter
         Artifact to generate the pie chart for.
     prefix : Optional[str]
         Prefix for the filename of the figure, by default `"severity"`.
@@ -59,9 +45,6 @@ def piechart_severity(
         Plot object with metadata for the generated figure.
     """
     style = PieChartStyle.get_style(style)
-
-    report = artifact.report
-    assert report is not None  # ideally do away with this
 
     if style != PieChartStyle.DEFAULT:
         extra = f"{style.value.title()} "
@@ -109,21 +92,33 @@ def piechart_severity(
         autopct=lambda pct: labelfunc(pct, plotdata.values),
     )
 
+    if report.is_aggregate:
+        name = "All Repositories"  # FIXME: more specific than "All Repositories"
+        artifact = None
+        filename = "aggregatereport"
+    else:
+        name = report.artifacts[0].repository.name
+        artifact = report.artifacts[0]
+        filename = None
+    p.title = f"{name} - {title}"
+
     # Add legend
     ax.legend(
         wedges,
         [l.name for l in plotdata.labels],
-        title=f"Severity Distribution for {report.artifact}",
+        title="Severity",
         loc="upper left",
         bbox_to_anchor=(1, 0, 0.5, 1),
     )
+    ax.set_title(p.title)
 
     # Save fig and store its filename
     # TODO: fix filename
     path = save_fig(
-        fig,
-        artifact,
-        prefix=prefix,
+        fig=fig,
+        filename=filename,
+        artifact=artifact,
+        # prefix=prefix,
         directory=directory,
         suffix=f"{style.name}_piechart_severity",
     )
@@ -139,11 +134,12 @@ def piechart_severity(
 
 def save_fig(
     fig: Figure,
-    artifact: ArtifactInfo,
+    filename: Optional[str] = None,
+    artifact: Optional[ArtifactInfo] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     directory: Optional[Union[str, Path]] = None,
-    filetype: str = "pdf",
+    filetype: str = "png",
     close_after: bool = True,
 ) -> Path:
     """Saves a figure to a file.
@@ -171,29 +167,27 @@ def save_fig(
     Path
         Path to the saved figure.
     """
-    if artifact.repository.name:
-        fname = f"{artifact.repository.name}"
-    else:
-        fname = ""
-
-    fname = f"{artifact.repository.name}"
-    if artifact.artifact.digest:
-        digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
-        fname = f"{fname}_{digest}"
+    fname = filename or ""
+    if artifact:
+        if artifact.repository.name:
+            fname = f"{artifact.repository.name}"
+        if artifact.artifact.digest:
+            digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
+            fname = f"{fname}_{digest}"
 
     if prefix:
-        fname += f"_{prefix}"
+        fname = f"{prefix}_{fname}"
     if suffix:
-        fname += f"_{suffix}"
+        fname = f"{fname}_{suffix}"
     if filetype:
-        fname += f".{filetype}"
+        fname = f"{fname}.{filetype}"  # remove?
 
     dirpath = Path(directory) if directory else Path(".")
 
     fig_filename = sanitize(fname)
     path = (dirpath / Path(fig_filename)).absolute()
 
-    fig.savefig(str(path))
+    fig.savefig(str(path), format=filetype)
     if close_after:
         plt.close(fig)
 

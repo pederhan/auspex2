@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<style>
+    table,
+    th,
+    td {
+        border: 1px solid black;
+    }
+</style>
+
+<head>
+    <title>My Webpage</title>
+</head>
+
+<body>
+    <table>
+        <tr>
+            {% for col in table.header %}
+            <th>{{ col }}</th>
+            {% endfor %}
+        </tr>
+        {% for row in table.rows %}
+        <tr>
+            {% for col in row %}
+            <td>{{ col }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

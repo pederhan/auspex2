@@ -1,12 +1,18 @@
 from collections import Counter
-from typing import List
+from typing import Iterable, List, cast
 
-from harborapi.models.scanner import Severity, VulnerabilityItem
+from harborapi.models.scanner import (
+    HarborVulnerabilityReport,
+    Severity,
+    VulnerabilityItem,
+)
 
+from .npmath import mean, median, stdev
 from .plots import PlotData
+from .report import Vulnerability
 
 
-def get_distribution(vulnerabilities: List[VulnerabilityItem]) -> Counter[Severity]:
+def get_distribution(vulnerabilities: Iterable[Vulnerability]) -> Counter[Severity]:
     """Get a counter showing the distribution of severities from a list of vulnerabilities.
 
     Args:
@@ -16,9 +22,9 @@ def get_distribution(vulnerabilities: List[VulnerabilityItem]) -> Counter[Severi
         Counter[Severity]: The distribution of severities.
     """
     dist = Counter()  # type: Counter[Severity]
-    for vulnerability in vulnerabilities:
-        if vulnerability.severity:
-            dist[vulnerability.severity] += 1
+    for v in vulnerabilities:
+        if v.vulnerability.severity:
+            dist[v.vulnerability.severity] += 1
     return dist
 
 

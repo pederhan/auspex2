@@ -1,11 +1,14 @@
-from harborapi.models.scanner import HarborVulnerabilityReport
+from typing import Union
+
+from harborapi.models.scanner import Severity
 
 from ..api import ArtifactInfo
-from ..cve import highest_severity
+from ..cve import most_severe
+from ..report import ArtifactCVSS, ArtifactReporter
 from .models import Table
 
 
-def statistics_table(artifact: ArtifactInfo) -> Table:
+def statistics_table(report: ArtifactReporter) -> Table:
     """Generates the table data used to display the statistics of a report.
 
     Parameters
@@ -19,6 +22,7 @@ def statistics_table(artifact: ArtifactInfo) -> Table:
         The generated table data.
     """
     columns = [
+        "Image",
         "Median CVSS",
         "Mean CVSS",
         "CVSS Stdev",
@@ -32,34 +36,20 @@ def statistics_table(artifact: ArtifactInfo) -> Table:
     # Always add Image as 1st column if we have an aggregated report
     # if isinstance(report, AggregateReport):
     #     columns.insert(0, "Image")
+    # report = report.report
+    # dist = report.distribution
 
-    dist = report.get_distribution_by_severity()
-    prio = ["critical", "high", "medium", "low"]
-    # This is flimsy and should be refactored and moved to
-    # a separate function.
-    # We rely on the order defined in the list `prio` above.
-    # TODO: use CVESeverity to define the order
-    highest_severity = "low"  # default to low
-    for p in prio:
-        if dist.get(p):
-            highest_severity = p
-            break
+    # sev = most_severe(artifact.report.distribution)
 
-    sev = highest_severity(artifact.report.distribution)
-
-    # FIXME: we don't seem to use this value?
-    highest_severity = highest_severity.title()
+    # # FIXME: we don't seem to use this value?
+    # highest_severity = sev.name.title()
 
     rows = []
-    if isinstance(report, AggregateReport):
-        for r in report.reports:
-            row = _get_report_statistics_row(r)
-            row.insert(0, r.image.image_name)
-            rows.append(row)
-    else:
-        rows.append(_get_report_statistics_row(report))
+    for c in report.cvss:
+        row = _get_report_statistics_row(c)
+        rows.append(row)
 
-    return TableData(
+    return Table(
         title="Statistics",
         header=columns,
         rows=rows,
@@ -73,17 +63,34 @@ def statistics_table(artifact: ArtifactInfo) -> Table:
     )
 
 
-def _get_report_statistics_row(report: HarborVulnerabilityReport) -> list[Any]:
-    dist = report.get_distribution_by_severity()
+def _get_report_statistics_row(cvss: ArtifactCVSS) -> list[Union[str, int, float]]:
+    # Alias for shorter variable names
+    report = cvss.artifact.report
+
+    # Columns:
+    name = cvss.artifact.repository.name
+    dist = report.distribution
+    # Total number of vulnerabilities
+    low = dist.get(Severity.low, 0)
+    medium = dist.get(Severity.medium, 0)
+    high = dist.get(Severity.high, 0)
+    critical = dist.get(Severity.critical, 0)
+    total = low + medium + high + critical
+
     row = [
-        format_decimal(report.cvss.median),
-        format_decimal(report.cvss.mean),
-        format_decimal(report.cvss.stdev),
-        format_decimal(report.cvss.max),
-        dist["low"],
-        dist["medium"],
-        dist["high"],
-        dist["critical"],
-        dist["low"] + dist["medium"] + dist["high"] + dist["critical"],
+        # format_decimal(report.cvss.median),
+        # format_decimal(report.cvss.mean),
+        # format_decimal(report.cvss.stdev),
+        # format_decimal(report.cvss.max),
+        name,
+        cvss.cvss.median,
+        cvss.cvss.mean,
+        cvss.cvss.stdev,
+        cvss.cvss.max,
+        low,
+        medium,
+        high,
+        critical,
+        total,
     ]
     return row

@@ -1,9 +1,20 @@
-from typing import List
+from typing import Iterable
 
 from harborapi.models.scanner import Severity
+from pydantic import BaseModel
 
 
-def highest_severity(severities: List[Severity]) -> Severity:
+class CVSS(BaseModel):
+    """Key CVSS metrics for a scanned container."""
+
+    mean: float
+    median: float
+    stdev: float
+    min: float
+    max: float
+
+
+def most_severe(severities: Iterable[Severity]) -> Severity:
     """Returns the highest severity in a list of severities."""
     prio = [  # low -> high
         Severity.unknown,
