@@ -1,25 +1,104 @@
-from typing import Union
+from typing import Optional, Union
 
 from harborapi.models.scanner import Severity
 
 from ..api import ArtifactInfo
 from ..cve import most_severe
-from ..report import ArtifactCVSS, ArtifactReporter
+from ..format import format_decimal
+from ..report import ArtifactCVSS, ArtifactReport
+from ..text import Hyperlink
 from .models import Table
 
 
-def statistics_table(report: ArtifactReporter) -> Table:
-    """Generates the table data used to display the statistics of a report.
+def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table:
+    """Generates the table data used to display the info for an image.
 
     Parameters
     ----------
-    artifact : ArtifactInfo
-        The artifact to display the statistics for.
+    report : ArtifactReport
+        The reports to display image statistics for.
+    digest_limit : int
+        Maximum displayed sha256 digest length, by default 8
 
     Returns
     -------
-    `Table`
-        The generated table data.
+    Table
+        The generated table.
+    """
+    columns = [
+        "Image",
+        "Created",
+        "Tags",
+        "Digest",
+    ]
+
+    rows = []  # type: list[list[str]]
+    for a in report.artifacts:
+        digest = "-"
+
+        # Digest
+        if a.artifact.digest is not None:
+            digest = a.artifact.digest
+            if ":" in a.artifact.digest:
+                digest = digest.split(":")[1]
+            if digest_limit and len(digest) > digest_limit:
+                digest = digest[:digest_limit]  # + "..."
+
+        # Move to ImageInfo.get_tags()?
+
+        # Tags
+        if a.artifact.tags is not None:
+            tags = ", ".join(t.name for t in a.artifact.tags if t.name is not None)
+        else:
+            tags = "-"
+
+        # Created (push) time
+        if a.artifact.push_time is not None:
+            created = a.artifact.push_time.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            created = "-"
+
+        # Repo name
+        if a.repository.name is not None:
+            repo_name = a.repository.name
+        else:
+            repo_name = "-"
+
+        rows.append(
+            [
+                repo_name,
+                created,
+                tags,
+                digest,
+            ]
+        )
+
+    title = "Image"
+    if report.is_aggregate:
+        title += "s"
+
+    return Table(
+        title=title,
+        header=columns,
+        rows=rows,
+        caption="",
+        description="",
+    )
+
+
+def cve_statistics(report: ArtifactReport) -> Table:
+    """Generates the table data used to display the statistics of images
+    in a report.
+
+    Parameters
+    ----------
+    report : ArtifactInfo
+        The report to display the statistics for.
+
+    Returns
+    -------
+    Table
+        The generated table.
     """
     columns = [
         "Image",
@@ -33,20 +112,31 @@ def statistics_table(report: ArtifactReporter) -> Table:
         "C",
         "# Vulns",
     ]
-    # Always add Image as 1st column if we have an aggregated report
-    # if isinstance(report, AggregateReport):
-    #     columns.insert(0, "Image")
-    # report = report.report
-    # dist = report.distribution
-
-    # sev = most_severe(artifact.report.distribution)
-
-    # # FIXME: we don't seem to use this value?
-    # highest_severity = sev.name.title()
 
     rows = []
     for c in report.cvss:
-        row = _get_report_statistics_row(c)
+        # Columns:
+        name = c.artifact.repository.name
+        dist = c.artifact.report.distribution
+        # Total number of vulnerabilities
+        low = dist.get(Severity.low, 0)
+        medium = dist.get(Severity.medium, 0)
+        high = dist.get(Severity.high, 0)
+        critical = dist.get(Severity.critical, 0)
+        total = low + medium + high + critical
+
+        row = [
+            name,
+            format_decimal(c.cvss.median),
+            format_decimal(c.cvss.mean),
+            format_decimal(c.cvss.stdev),
+            format_decimal(c.cvss.max),
+            low,
+            medium,
+            high,
+            critical,
+            total,
+        ]
         rows.append(row)
 
     return Table(
@@ -78,15 +168,11 @@ def _get_report_statistics_row(cvss: ArtifactCVSS) -> list[Union[str, int, float
     total = low + medium + high + critical
 
     row = [
-        # format_decimal(report.cvss.median),
-        # format_decimal(report.cvss.mean),
-        # format_decimal(report.cvss.stdev),
-        # format_decimal(report.cvss.max),
         name,
-        cvss.cvss.median,
-        cvss.cvss.mean,
-        cvss.cvss.stdev,
-        cvss.cvss.max,
+        format_decimal(cvss.cvss.median),
+        format_decimal(cvss.cvss.mean),
+        format_decimal(cvss.cvss.stdev),
+        format_decimal(cvss.cvss.max),
         low,
         medium,
         high,
