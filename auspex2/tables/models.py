@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..text import Text
+
 
 @dataclass
 class Table:
     title: str
     header: list[str] = field(default_factory=list)  # column names
-    rows: list[list[Any]] = field(
+    rows: list[list[Text]] = field(
         default_factory=list
     )  # each row is a list of len(header)
     caption: str = ""

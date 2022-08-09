@@ -6,7 +6,7 @@ from ..api import ArtifactInfo
 from ..cve import most_severe
 from ..format import format_decimal
 from ..report import ArtifactCVSS, ArtifactReport
-from ..text import Hyperlink
+from ..text import Hyperlink, Text
 from .models import Table
 
 
@@ -32,7 +32,7 @@ def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table
         "Digest",
     ]
 
-    rows = []  # type: list[list[str]]
+    rows = []  # type: list[list[Text]]
     for a in report.artifacts:
         digest = "-"
 
@@ -66,10 +66,10 @@ def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table
 
         rows.append(
             [
-                repo_name,
-                created,
-                tags,
-                digest,
+                Text(repo_name),
+                Text(created),
+                Text(tags),
+                Text(digest),
             ]
         )
 
@@ -126,16 +126,16 @@ def cve_statistics(report: ArtifactReport) -> Table:
         total = low + medium + high + critical
 
         row = [
-            name,
-            format_decimal(c.cvss.median),
-            format_decimal(c.cvss.mean),
-            format_decimal(c.cvss.stdev),
-            format_decimal(c.cvss.max),
-            low,
-            medium,
-            high,
-            critical,
-            total,
+            Text(name),
+            Text(format_decimal(c.cvss.median)),
+            Text(format_decimal(c.cvss.mean)),
+            Text(format_decimal(c.cvss.stdev)),
+            Text(format_decimal(c.cvss.max)),
+            Text(low),
+            Text(medium),
+            Text(high),
+            Text(critical),
+            Text(total),
         ]
         rows.append(row)
 
@@ -180,19 +180,23 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
     ]
 
     rows = []
-    reports = []
 
     # Get list of vulnerabilities per image
     for a in report.artifacts:
         most_severe = a.report.top_vulns(maxrows, fixable=fixable)
         for vuln in most_severe:
-            # Vuln name (ID)
-            name = vuln.description or "-"
+            # Image name (repo)
+            name = a.repository.name or "-"
+
+            # Vuln description
+            description = vuln.description or "-"
+
             # Vuln URL
             # url = vuln.url or "-"
             vuln_id = vuln.id or ""
             url = Hyperlink(
-                "https://nvd.nist.gov/vuln/detail/{}".format(vuln_id), vuln_id
+                text=vuln_id,
+                url="https://nvd.nist.gov/vuln/detail/{}".format(vuln_id),
             )
 
             # Vuln score
@@ -205,12 +209,12 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
             upgradable = "Yes" if vuln.fixable else "No"
 
             row = [
-                a.repository.name,
-                name,
+                Text(name),
+                Text(description),
                 url,
-                format_decimal(score),  # TODO: format
-                severity,
-                upgradable,
+                Text(format_decimal(score)),  # TODO: format
+                Text(severity),
+                Text(upgradable),
             ]
             rows.append(row)
 
