@@ -12,4 +12,4 @@ env = Environment(
 )
 
 
-tables_template = env.get_template("tables.html")
+tables_template = env.get_template("report.html")
