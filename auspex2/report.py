@@ -63,8 +63,8 @@ class ArtifactReport:
                 mean=npmath.median(scores),
                 median=npmath.mean(scores),
                 stdev=npmath.stdev(scores),
-                min=min(scores),
-                max=max(scores),
+                min=npmath.min(scores),
+                max=npmath.max(scores),
             )
             cvss.append(ArtifactCVSS(c, a))
         return cvss
