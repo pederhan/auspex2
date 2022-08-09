@@ -15,11 +15,15 @@ from .report import Vulnerability
 def get_distribution(vulnerabilities: Iterable[Vulnerability]) -> Counter[Severity]:
     """Get a counter showing the distribution of severities from a list of vulnerabilities.
 
-    Args:
-        vulnerabilities (List[VulnerabilityItem]): The vulnerabilities to count.
+    Parameters
+    ----------
+    vulnerabilities : List[VulnerabilityItem]
+        The vulnerabilities to count.
 
-    Returns:
-        Counter[Severity]: The distribution of severities.
+    Returns
+    -------
+    Counter[Severity] :
+        The distribution of severities.
     """
     dist = Counter()  # type: Counter[Severity]
     for v in vulnerabilities:
@@ -32,11 +36,16 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
     """Create a PlotData object with severities as labels and counts as values
      from a Counter of severities.
 
-    Args:
-        distribution (Counter[Severity]): The distribution of severity values.
 
-    Returns:
-        PlotData[Severity, int]: The constructed PlotData object.
+    Parameters
+    ----------
+    distribution : Counter[Severity]
+        The distribution of severities to create plot data from.
+
+    Returns
+    -------
+    PlotData[Severity, int]
+        Plot data where the labels are the severities and the values are the counts.
     """
     p = PlotData()
     # "dumb" iteration to ensure order is correct (not necessary?)
