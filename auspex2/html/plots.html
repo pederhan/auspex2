@@ -1,0 +1,12 @@
+{% macro plot(pt) -%}
+<h1>{{ pt.title }}</h1>
+<div>
+    <figure class="figure">
+        <img src="{{ pt.path }}" class="figure-img img-fluid rounded" alt="{{ pt.title }}">
+        {% if pt.caption %}
+        <figcaption class="figure-caption">{{ pt.caption }}</figcaption>
+        {% endif %}
+    </figure>
+    <p>{{ pt.description }}</p>
+</div>
+{%- endmacro %}
