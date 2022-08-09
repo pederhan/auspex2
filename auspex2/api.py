@@ -89,9 +89,67 @@ async def _get_repo_artifacts(
     return [ArtifactInfo(artifact=artifact, repository=repo) for artifact in artifacts]
 
 
+async def get_repositories(
+    client: HarborAsyncClient, projects: List[str], exc_ok: bool = False
+) -> List[Repository]:
+    """Fetch all repositories in a list of projects.
+
+    Parameters
+    ----------
+    client : HarborAsyncClient
+        The client to use for the API call.
+    projects : List[str]
+        The list of projects to fetch repositories from.
+    exc_ok : bool
+        Whether or not to continue on error.
+        If True, the failed repository is skipped, and the exception
+        is logged. If False, the exception is raised.
+
+    Returns
+    -------
+    List[Repository]
+        A list of Repository objects.
+    """
+    coros = [_get_project_repos(client, project) for project in projects]
+    rtn = await asyncio.gather(*coros, return_exceptions=True)
+
+    repos = []
+    for repo_or_exc in rtn:
+        if isinstance(repo_or_exc, Exception):
+            if exc_ok:
+                logger.error(repo_or_exc)
+            else:
+                raise repo_or_exc
+        else:
+            repos.extend(repo_or_exc)
+    return repos
+
+
+async def _get_project_repos(
+    client: HarborAsyncClient, project: str
+) -> List[Repository]:
+    """Fetch all repositories in a project.
+
+    Parameters
+    ----------
+    client : HarborAsyncClient
+        The client to use for the API call.
+    project : str
+        The project to fetch repositories from.
+
+    Returns
+    -------
+    List[Repository]
+        A list of Repository objects.
+    """
+    return await client.get_repositories(project_name=project)
+
+
 async def get_artifact_vulnerabilities(
     client: HarborAsyncClient,
     tags: Optional[List[str]] = None,
+    projects: Optional[List[str]] = None,
+    exc_ok: bool = False,
     **kwargs: Any,
 ) -> List[ArtifactInfo]:
     """Fetch all artifact vulnerability reports in all projects.
@@ -115,7 +173,18 @@ async def get_artifact_vulnerabilities(
         A list of ArtifactInfo objects, where the .report field is populated with the
         vulnerability report.
     """
-    repos = await client.get_repositories()
+    projects = projects or []
+    if projects:
+        repos = await get_repositories(client, projects, exc_ok=exc_ok)
+    else:
+        repos = []
+    # repos = []
+
+    # # TODO: run concurrently
+
+    # for project in projects:
+    #     r = await client.get_repositories(project_name=project)
+    #     repos.extend(r)
 
     # We first retrieve all artifacts before we get the vulnerability reports
     # since the reports themselves lack information about the artifact.
