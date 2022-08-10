@@ -30,29 +30,25 @@ class PlotData(Generic[T, S]):
 
 
 class Plot(BaseModel):
-    title: str  # TODO: use Text?
+    title: Union[Text, str]
     plot_type: PlotType
     description: Union[Text, str] = Text()
     caption: Union[Text, str] = Text()
     path: Optional[Path] = None
+    script: Optional[str] = None
+    div: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True
         validate_assignment = True
 
-    # @validator("description")
-    # def coerce_description(cls, v: Any) -> Union[Text, str]:
-    #     if isinstance(v, str):
-    #         return Text(v)
-    #     return v
-
+    _title_validator = text_validator("title")
     _description_validator = text_validator("description")
+    _caption_validator = text_validator("caption")
 
-    def __post_init__(self) -> None:
-        if isinstance(self.description, str):
-            self.description = Text(self.description)
-        if isinstance(self.caption, str):
-            self.caption = Text(self.caption)
+    @property
+    def embeddable(self) -> bool:
+        return self.script is not None and self.div is not None
 
 
 class PieChartStyle(Enum):

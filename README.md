@@ -5,4 +5,4 @@ The artist formerly known as [Auspex](https://github.com/auspex-ntnu/auspex).
 
 ## TODO
 
-- [ ] Render plots in browser with [mpld3](https://github.com/mpld3/mpld3)
+- [ ] Render plots in browser with [bokeh](https://bokeh.org/)

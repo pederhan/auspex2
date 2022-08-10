@@ -2,12 +2,20 @@
 
 {% block content %}
 
+<!-- Insert Bokeh script tags -->
+{% for plt in pplots -%}
+{% if plt.embeddable %}
+{{ plt.script | safe }}
+{% endif %}
+{%- endfor %}
+
 {% for t in ttables -%}
 {{ tables.table(t) }}
 {%- endfor %}
 
-{% for p in pplots -%}
-{{ plots.plot(p) }}
+<!-- Insert Bokeh script targets -->
+{% for plt in pplots -%}
+{{ plots.plot(plt) }}
 {%- endfor %}
 
 {% endblock %}

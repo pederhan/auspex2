@@ -64,17 +64,7 @@ def token_to_text(text: Union[TextLike, str]) -> TextLike:
 
 
 class Text:
-    """A plain text token (???)
-
-    Once initalized, the text is immutable, but other Text objects can be
-    concatenated with the + operator. For example:
-
-    >>> t = Text("Hello, ") + Text("world!")
-    >>> t.render()
-    'Hello, world!'
-
-    All text tokens inherit from this class.
-    """
+    """A plain text token (???)"""
 
     text: TextLike  # define type for str, int, etc.
     _tokens: List[TextLike] = []
@@ -88,7 +78,7 @@ class Text:
             self._tokens.append(token_to_text(arg))
 
     def __bool__(self) -> bool:
-        return bool(self.text)
+        return bool(self._tokens)
 
     def __str__(self) -> str:
         return self.render()
@@ -102,6 +92,7 @@ class Text:
         else:
             t = self.__class__(text=other)
         self._tokens.append(t)  # FIXME: VERY BAD! REMOVE
+        # TODO: return new instance with modified ._tokens
         return self
 
     def render(self) -> str:
@@ -160,5 +151,7 @@ def _text_validator(cls, value: Any) -> Text:
         raise TypeError(f"{value} is not a valid string or Text")
 
 
-def text_validator(field: str, *args, **kwargs) -> Any:
-    return validator(field, allow_reuse=True, pre=True)(_text_validator)
+def text_validator(field: str, each_item: bool = False) -> Any:
+    return validator(field, allow_reuse=True, pre=True, each_item=each_item)(
+        _text_validator
+    )

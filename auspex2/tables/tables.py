@@ -116,7 +116,7 @@ def cve_statistics(report: ArtifactReport) -> Table:
     rows = []
     for c in report.cvss:
         # Columns:
-        name = c.artifact.repository.name
+        name = c.artifact.repository.name or "-"
         dist = c.artifact.report.distribution
         # Total number of vulnerabilities
         low = dist.get(Severity.low, 0)
@@ -229,4 +229,4 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
     if fixable:
         description += "Only vulnerabilities that are fixable are listed."
 
-    return Table(title, header, rows, description=description)
+    return Table(title=title, header=header, rows=rows, description=description)

@@ -1,18 +1,24 @@
 import asyncio
 from enum import Enum
 from importlib.metadata import distribution
+from math import pi
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np  # noqa?
+import pandas as pd
+from bokeh.embed import components
+from bokeh.palettes import RdYlGn
+from bokeh.plotting import figure, output_file, save, show
+from bokeh.plotting.figure import Figure
+from bokeh.transform import cumsum
 from harborapi.models.scanner import Severity
-from matplotlib.figure import Figure
 from sanitize_filename import sanitize
 
 from ..api import ArtifactInfo
 from ..colors import get_color
 from ..report import ArtifactReport
+from ..text import Text
 from ..utils import get_distribution, plotdata_from_dist
 from .models import PieChartStyle, Plot, PlotType
 
@@ -22,6 +28,8 @@ def piechart_severity(
     # prefix: Optional[str] = "severity",
     directory: Optional[Union[str, Path]] = None,
     style: Union[PieChartStyle, str] = PieChartStyle.DEFAULT,
+    as_html: bool = False,
+    **kwargs: Any,
 ) -> Plot:
     """Generates a pie chart of the severity distribution of vulnerabilities.
 
@@ -38,6 +46,8 @@ def piechart_severity(
         By default, all vulnerabilities are included.
         If `PieChartStyle.FIXABLE` or "fixable", only vulnerabilities that can be fixed are included.
         If `PieChartStyle.UNFIXABLE` or "unfixable", only vulnerabilities that cannot be fixed are included.
+    **kwargs : Any
+        Additional keyword arguments to pass to `save_fig`.
 
     Returns
     -------
@@ -51,16 +61,14 @@ def piechart_severity(
     else:
         extra = ""
 
-    title = f"Distribution of {extra}Vulnerabilities by Severity"
-    p = Plot(
+    title = f"{extra}Vulnerabilities"
+    plot = Plot(
         title=title,
         description="No vulnerabilities found.",
         caption=title,
         path=None,
         plot_type=PlotType.PIE,
     )
-
-    fig, ax = plt.subplots()
 
     size = 0.3
 
@@ -73,122 +81,131 @@ def piechart_severity(
 
     plotdata = plotdata_from_dist(distribution)
     if all(v == 0 for v in plotdata.values):
-        return p
+        return plot
 
-    colors = [get_color(severity) for severity in plotdata.labels]
-
-    def labelfunc(pct: float, allvals: list[int]) -> str:
-        absolute = int(np.round(pct / 100.0 * np.sum(allvals)))
-        return "{:.1f}%\n({:d})".format(pct, absolute)
-
-    # Outer pie chart
-    wedges, *_ = ax.pie(
-        plotdata.values,
-        radius=1,
-        colors=colors,
-        wedgeprops=dict(width=0.7, edgecolor="black", linewidth=0.5),
-        startangle=90,
-        counterclock=False,
-        autopct=lambda pct: labelfunc(pct, plotdata.values),
+    data = (
+        pd.Series(distribution)
+        .reset_index(name="value")
+        .rename(columns={"index": "country"})
     )
+
+    data["country"] = data["country"].map(lambda x: Severity(x).name)
+    data["angle"] = data["value"] / data["value"].sum() * 2 * pi
+    data["color"] = RdYlGn[len(distribution)]
+
+    p = figure(
+        height=350,
+        title="Pie Chart",
+        toolbar_location=None,
+        tools="hover",
+        tooltips="@country: @value",
+        x_range=(-0.5, 1.0),
+    )
+
+    p.wedge(
+        x=0,
+        y=1,
+        radius=0.4,
+        start_angle=cumsum("angle", include_zero=True),
+        end_angle=cumsum("angle"),
+        line_color="white",
+        fill_color="color",
+        legend_field="country",
+        source=data,
+    )
+
+    p.axis.axis_label = None
+    p.axis.visible = False
+    p.grid.grid_line_color = None
 
     if report.is_aggregate:
         name = "All Repositories"  # FIXME: more specific than "All Repositories"
         artifact = None
-        filename = "aggregatereport"
+        prefix = "agg"
     else:
         name = report.artifacts[0].repository.name
         artifact = report.artifacts[0]
-        filename = None
-    p.title = f"{name} - {title}"
+        prefix = None
 
-    # Add legend
-    ax.legend(
-        wedges,
-        [l.name for l in plotdata.labels],
-        title="Severity",
-        loc="upper left",
-        bbox_to_anchor=(1, 0, 0.5, 1),
-    )
-    ax.set_title(p.title)
+    if as_html:
+        plot.script, plot.div = save_fig_components(p)
+    else:
+        plot.path = save_fig(p, artifact, directory, prefix, **kwargs)
 
-    # Save fig and store its filename
-    # TODO: fix filename
-    path = save_fig(
-        fig=fig,
-        filename=filename,
-        artifact=artifact,
-        # prefix=prefix,
-        directory=directory,
-        suffix=f"{style.name}_piechart_severity",
-    )
-    p.path = path
-    p.description = (
+    plot.description = (
         f"The pie chart shows the distribution of {extra}vulnerabilities by severity. "
         "Severities are grouped by colour, as described by the legend. "
         "Each slice of the pie denotes the percentage of the total, and sum of vulnerabilities for each severity."
     )
     # plt.show(block=True)
-    return p
+    return plot
+
+
+def save_fig_components(fig: Figure) -> Tuple[str, str]:
+    return components(fig)
 
 
 def save_fig(
     fig: Figure,
-    filename: Optional[str] = None,
-    artifact: Optional[ArtifactInfo] = None,
+    artifact: Optional[ArtifactInfo],
+    directory: Optional[Union[str, Path]] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
-    directory: Optional[Union[str, Path]] = None,
-    filetype: str = "png",
-    close_after: bool = True,
 ) -> Path:
-    """Saves a figure to a file.
+    fpath = get_figure_filepath(
+        artifact=artifact, directory=directory, prefix=prefix, suffix=".html"
+    )
+    output_file(filename=fpath)
+    save(fig)
+    return fpath
+
+
+def get_figure_filepath(
+    artifact: Optional[ArtifactInfo] = None,
+    directory: Optional[Union[str, Path]] = None,
+    prefix: Optional[str] = None,
+    suffix: Optional[str] = None,
+) -> Path:
+    """Generate a file path for a new figure.
 
     Parameters
     ----------
-    fig : Figure
-        The figure to save.
     artifact : ArtifactInfo
-        Information about the artifact used to generate the figure.
+        The artifact used to generate the figure.
+    directory : Optional[Union[str, Path]]
+        The directory to save the figure to, by default None
+        If omitted, uses current working directory.
     prefix : Optional[str]
         The prefix for the of the figure's filename.
-        If omitted, uses the artifact's name and digest, by default None
     suffix : Optional[str]
-        Suffix to append to filename
-    directory : Optional[Union[str, Path]]
-        The directory to save the file to, by default None
-    filetype : str
-        File suffix, by default "pdf"
-    close_after : bool
-        Close figure after saving, by default True
+        File suffix, by default None
 
     Returns
     -------
     Path
-        Path to the saved figure.
+        The generated path.
     """
-    fname = filename or ""
+    if not directory:
+        directory = Path(".")
+    elif not isinstance(directory, Path):
+        directory = Path(directory)
+
+    fname = f"{prefix}_" or ""
     if artifact:
         if artifact.repository.name:
-            fname = f"{artifact.repository.name}"
+            fname += f"{artifact.repository.name}"
         if artifact.artifact.digest:
             digest = artifact.artifact.digest[:14]  # sha256 + 8 chars
-            fname = f"{fname}_{digest}"
+            fname += f"_{digest}"
 
-    if prefix:
-        fname = f"{prefix}_{fname}"
+    fname = f"{sanitize(fname)}"
+
+    path = directory / fname
+    path = path.resolve()  # resolve symlinks # NOTE: can fail. See docs
+
     if suffix:
-        fname = f"{fname}_{suffix}"
-    if filetype:
-        fname = f"{fname}.{filetype}"  # remove?
-
-    dirpath = Path(directory) if directory else Path(".")
-
-    fig_filename = sanitize(fname)
-    path = (dirpath / Path(fig_filename)).absolute()
-
-    fig.savefig(str(path), format=filetype)
-    if close_after:
-        plt.close(fig)
+        if not suffix.startswith("."):
+            suffix = f".{suffix}"
+        path = path.with_suffix(suffix)
 
     return path
