@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel
 
@@ -27,6 +27,9 @@ class PlotData(Generic[T, S]):
     def __post_init__(self):
         if len(self.labels) != len(self.values):
             raise ValueError("labels and values must be the same length")
+
+    def as_dict(self) -> Dict[T, S]:
+        return {label: value for label, value in zip(self.labels, self.values)}
 
 
 class Plot(BaseModel):
