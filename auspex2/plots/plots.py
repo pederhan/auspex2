@@ -1,6 +1,3 @@
-import asyncio
-from enum import Enum
-from importlib.metadata import distribution
 from math import pi
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
@@ -16,7 +13,6 @@ from harborapi.models.scanner import Severity
 from sanitize_filename import sanitize
 
 from ..api import ArtifactInfo
-from ..colors import get_color
 from ..report import ArtifactReport
 from ..text import Text
 from ..utils import get_distribution, plotdata_from_dist
@@ -84,7 +80,7 @@ def piechart_severity(
         return plot
 
     data = (
-        pd.Series(distribution)
+        pd.Series(plotdata.as_dict())
         .reset_index(name="value")
         .rename(columns={"index": "country"})
     )

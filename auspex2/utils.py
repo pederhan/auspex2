@@ -7,6 +7,7 @@ from harborapi.models.scanner import (
     VulnerabilityItem,
 )
 
+from .cve import sort_distribution
 from .npmath import mean, median, stdev
 from .plots import PlotData
 from .report import Vulnerability
@@ -49,7 +50,8 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
     """
     p = PlotData()
     # "dumb" iteration to ensure order is correct (not necessary?)
-    for severity, count in distribution.items():
+    distrib_sorted = sort_distribution(distribution)
+    for severity, count in distrib_sorted:
         p.labels.append(severity)
         p.values.append(count)
     return p
