@@ -3,7 +3,7 @@ from pathlib import Path
 from jinja2 import Environment, PackageLoader, select_autoescape
 from jinja2.loaders import FileSystemLoader
 
-loader = FileSystemLoader(str(Path(__file__).parent))
+loader = FileSystemLoader(Path(__file__).parent / "templates")
 
 env = Environment(
     # loader=PackageLoader("auspex2"),

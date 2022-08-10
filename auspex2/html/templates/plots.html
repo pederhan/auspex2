@@ -7,6 +7,6 @@
         <figcaption class="figure-caption">{{ pt.caption }}</figcaption>
         {% endif %}
     </figure>
-    <p>{{ pt.description }}</p>
+    <p>{{ pt.description.render_html() | safe }}</p>
 </div>
 {%- endmacro %}
