@@ -7,6 +7,7 @@ from harborapi.models.scanner import (
     VulnerabilityItem,
 )
 
+from .colors import get_color_severity
 from .cve import sort_distribution
 from .npmath import mean, median, stdev
 from .plots import PlotData
@@ -37,6 +38,14 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
     """Create a PlotData object with severities as labels and counts as values
      from a Counter of severities.
 
+    Example:
+    >>> plotdata_from_dist(Counter({Severity.critical: 1, Severity.high: 2}))
+    PlotData(
+        labels=[Severity.critical, Severity.high],
+        values=[1, 2],
+        colors=["#d7191c", "#fdae61"]
+    )
+
 
     Parameters
     ----------
@@ -46,7 +55,8 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
     Returns
     -------
     PlotData[Severity, int]
-        Plot data where the labels are the severities and the values are the counts.
+        Plot data where `.labels` are the severities and `.values` are the counts.
+        `.colors` are set to the severity colors, as defined by the `colors` module.
     """
     p = PlotData()
     # "dumb" iteration to ensure order is correct (not necessary?)
@@ -54,4 +64,5 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
     for severity, count in distrib_sorted:
         p.labels.append(severity)
         p.values.append(count)
+    p.colors = [get_color_severity(severity) for severity in p.labels]
     return p
