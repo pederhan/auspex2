@@ -12,6 +12,7 @@ __all__ = [
     "Hyperlink",
     "Italics",
     "Bold",
+    "Color",
 ]
 
 
@@ -147,6 +148,21 @@ class Bold(Text):
 
     def render_html(self) -> str:
         return f"<b>{super().render_html()}</b>"
+
+
+class Color(Text):
+    """Color text token."""
+
+    color: str = "black"
+
+    def __init__(
+        self, text: Union[TextLike, str] = "", color: str = "black", *args
+    ) -> None:
+        super().__init__(text=text, *args)
+        self.color = color
+
+    def render_html(self) -> str:
+        return f"<div style='color: {self.color};'>{super().render_html()}</div>"
 
 
 def _text_validator(cls, value: Any) -> Text:
