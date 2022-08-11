@@ -57,7 +57,14 @@ class _TextToken:
         return str(self.text)
 
 
-def token_to_text(text: Union[TextLike, str]) -> TextLike:
+class Stringable(Protocol):
+    """Protocol for objects that can be rendered as string."""
+
+    def __str__(self) -> str:
+        ...
+
+
+def token_to_text(text: Union[TextLike, str, Stringable]) -> TextLike:
     if isinstance(text, TextLike):
         return text
     return _TextToken(text=text)
@@ -71,14 +78,14 @@ class Text:
 
     # __slots__ = ("text",)
 
-    def __init__(self, text: Union[TextLike, str] = "", *args) -> None:
+    def __init__(self, text: Union[TextLike, str, Stringable] = "", *args) -> None:
         self.text = token_to_text(text)
         self._tokens = [self.text]
         for arg in args:
             self._tokens.append(token_to_text(arg))
 
     def __bool__(self) -> bool:
-        return bool(self._tokens)
+        return any(bool(token) for token in self._tokens)
 
     def __str__(self) -> str:
         return self.render()
