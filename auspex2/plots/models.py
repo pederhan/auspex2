@@ -23,6 +23,7 @@ class PlotType(Enum):
 class PlotData(Generic[T, S]):
     labels: List[T] = field(default_factory=list)
     values: List[S] = field(default_factory=list)
+    colors: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if len(self.labels) != len(self.values):
