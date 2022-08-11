@@ -1,45 +1,54 @@
-from typing import Union
+from functools import lru_cache
+from typing import List, Sequence, Tuple, Union
 
-import matplotlib as mpl
-import numpy as np
+from bokeh.palettes import Greys3, RdYlGn5
 from harborapi.models.scanner import Severity
-from matplotlib.cm import get_cmap, register_cmap
-from matplotlib.colors import ListedColormap
+
+# set default palette and copy it, so we can modify its contents
+DEFAULT_PALETTE = list(RdYlGn5)  # type: list[str]
+DEFAULT_PALETTE[2] = "#fadd02"
 
 SEVERITY_COLORS = {
-    Severity.critical: "Reds",
-    Severity.high: "Oranges",
-    Severity.medium: "Yellows",
-    Severity.low: "Greens",
-    Severity.negligible: "Purples",
-    Severity.unknown: "Greys",
+    Severity.critical: RdYlGn5[4],
+    Severity.high: RdYlGn5[3],
+    Severity.medium: RdYlGn5[2],
+    Severity.low: RdYlGn5[1],
+    Severity.negligible: RdYlGn5[0],
+    Severity.unknown: Greys3[0],
 }
 
-# We use the RdYlGn CMAP but reverse it so it goes from Green to Red
-DEFAULT_CMAP = get_cmap("RdYlGn")
-DEFAULT_CMAP = DEFAULT_CMAP.reversed()
-DEFAULT_CMAP._init()  # type: ignore # call _init() so we can access the _lut attribute
-
-# Add "yellows" as a new colormap to the list of colormaps
-try:
-    N = 256
-    yellow = np.ones((N, 4))
-    yellow[:, 0] = np.linspace(255 / 256, 1, N)[::-1]  # R = 255
-    yellow[:, 1] = np.linspace(232 / 256, 1, N)[::-1]  # G = 232
-    yellow[:, 2] = np.linspace(11 / 256, 1, N)[::-1]  # B = 11
-    register_cmap("Yellows", ListedColormap(yellow))
-except ValueError as e:
-    if "already registered" in str(e):
-        pass
-    else:
-        raise
+COLOR_GOOD = DEFAULT_PALETTE[0]
+COLOR_BAD = DEFAULT_PALETTE[-1]
 
 
-def get_color(severity: Union[str, Severity]) -> tuple[float, float, float, float]:
+def get_color_severity(severity: Union[str, Severity]) -> str:
     # return mpl.colors.to_rgb(mpl.cm.get_cmap(colors[severity])(0.5))
     if isinstance(severity, str):
         try:
             severity = Severity(severity)
         except ValueError as e:
             raise ValueError(f"Unknown severity {severity}") from e
-    return get_cmap(SEVERITY_COLORS.get(severity))(0.5)  # type: ignore
+    return SEVERITY_COLORS.get(severity, SEVERITY_COLORS[Severity.unknown])
+
+
+@lru_cache(maxsize=256)  # or bigger?
+def get_color_cvss(cvss: float, palette: Sequence[str] = DEFAULT_PALETTE) -> str:
+    """Returns a hex color code given a palette and a CVSS score.
+
+    Parameters
+    ----------
+    cvss : float
+        CVSS score.
+    palette : Sequence[str]
+        Palette of hex color codes.
+
+    Returns
+    -------
+    str
+        Hex color code.
+    """
+    max_idx = len(palette) - 1
+    idx = round(max_idx * cvss / 10)
+    if idx > max_idx:
+        idx = max_idx
+    return palette[idx]
