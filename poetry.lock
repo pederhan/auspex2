@@ -173,7 +173,7 @@ description = "Async Harbor API v2.0 wrapper"
 category = "main"
 optional = false
 python-versions = "^3.8"
-develop = true
+develop = false
 
 [package.dependencies]
 backoff = "^2.1.2"
@@ -182,8 +182,10 @@ loguru = "^0.6.0"
 pydantic = "^1.9.1"
 
 [package.source]
-type = "directory"
-url = "../harborapi"
+type = "git"
+url = "https://github.com/pederhan/harborapi.git"
+reference = "main"
+resolved_reference = "268c49363dd8b66c2c8c134e964c0ef4a8ae7674"
 
 [[package]]
 name = "httpcore"
@@ -629,7 +631,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "c1bc0cee077fd586586e123dbede908662a6cc3586fcc5e77dcf68b70aba4597"
+content-hash = "1f5073fecaff044ac8d1cbc221e4d8ac7f28f3279f07bb0a62c54e55b8a1d809"
 
 [metadata.files]
 anyio = [
