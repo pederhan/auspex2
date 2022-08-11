@@ -3,10 +3,11 @@ from typing import Optional, Union
 from harborapi.models.scanner import Severity
 
 from ..api import ArtifactInfo
+from ..colors import COLOR_BAD, COLOR_GOOD, get_color_cvss
 from ..cve import most_severe
 from ..format import format_decimal
 from ..report import ArtifactCVSS, ArtifactReport
-from ..text import Hyperlink, Text
+from ..text import Color, Hyperlink, Text
 from .models import Table
 
 
@@ -118,6 +119,7 @@ def cve_statistics(report: ArtifactReport) -> Table:
         # Columns:
         name = c.artifact.repository.name or "-"
         dist = c.artifact.report.distribution
+
         # Total number of vulnerabilities
         low = dist.get(Severity.low, 0)
         medium = dist.get(Severity.medium, 0)
@@ -127,6 +129,10 @@ def cve_statistics(report: ArtifactReport) -> Table:
 
         row = [
             Text(name),
+            # Color(format_decimal(c.cvss.median), color=get_color_cvss(c.cvss.median)),
+            # Color(format_decimal(c.cvss.mean), color=get_color_cvss(c.cvss.mean)),
+            # Color(format_decimal(c.cvss.stdev), color=get_color_cvss(c.cvss.stdev)),
+            # Color(format_decimal(c.cvss.max), color=get_color_cvss(c.cvss.max)),
             Text(format_decimal(c.cvss.median)),
             Text(format_decimal(c.cvss.mean)),
             Text(format_decimal(c.cvss.stdev)),
@@ -201,20 +207,22 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
 
             # Vuln score
             score = vuln.get_cvss_score(a.report.scanner)
+            score_color = get_color_cvss(score)
 
             # Severity
             severity = vuln.get_severity(a.report.scanner).name.title()
 
             # Upgradable
             upgradable = "Yes" if vuln.fixable else "No"
+            upg_color = COLOR_GOOD if vuln.fixable else COLOR_BAD
 
             row = [
                 Text(name),
                 Text(description),
                 url,
-                Text(format_decimal(score)),  # TODO: format
+                Color(format_decimal(score), color=score_color),  # TODO: format
                 Text(severity),
-                Text(upgradable),
+                Color(upgradable, color=upg_color),
             ]
             rows.append(row)
 
