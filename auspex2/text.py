@@ -3,7 +3,7 @@
 
 # FIXME: this module is a mess! I am VERY bad at parsing/tokenizing!
 
-from typing import Any, List, Protocol, TypeVar, Union, runtime_checkable
+from typing import Any, List, Optional, Protocol, TypeVar, Union, runtime_checkable
 
 from pydantic import validator
 
@@ -27,10 +27,12 @@ class TextLike(Protocol):
     def __bool__(self) -> bool:
         ...
 
-    def render(self) -> str:
+    @property
+    def plain(self) -> str:
         ...
 
-    def render_html(self) -> str:
+    @property
+    def html(self) -> str:
         ...
 
     # can be expanded
@@ -51,10 +53,12 @@ class _TextToken:
     def __bool__(self) -> bool:
         return bool(self.text)
 
-    def render(self) -> str:
+    @property
+    def plain(self) -> str:
         return str(self.text)
 
-    def render_html(self) -> str:
+    @property
+    def html(self) -> str:
         return str(self.text)
 
 
@@ -89,10 +93,10 @@ class Text:
         return any(bool(token) for token in self._tokens)
 
     def __str__(self) -> str:
-        return self.render()
+        return self.plain
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} {self.render()}>"
+        return f"<{self.__class__.__name__} {self.plain}>"
 
     def __add__(self, other: Union[str, TextLike]) -> TextLike:
         if isinstance(other, TextLike):
@@ -103,13 +107,15 @@ class Text:
         # TODO: return new instance with modified ._tokens
         return self
 
-    def render(self) -> str:
+    @property
+    def plain(self) -> str:
         """Renders the text as a string."""
-        return "".join(t.render() for t in self._tokens)
+        return "".join(t.plain for t in self._tokens)
 
-    def render_html(self) -> str:
+    @property
+    def html(self) -> str:
         """Renders the text as HTML."""
-        return "".join(t.render_html() for t in self._tokens)
+        return "".join(t.html for t in self._tokens)
 
 
 class Hyperlink(Text):
@@ -132,22 +138,25 @@ class Hyperlink(Text):
             self.url = other.url
         return self
 
-    def render_html(self) -> str:
-        return f"<a href='{self.url}'>{super().render()}</a>"
+    @property
+    def html(self) -> str:
+        return f"<a href='{self.url}'>{super().plain}</a>"
 
 
 class Italics(Text):
     """Italics text token."""
 
-    def render_html(self) -> str:
-        return f"<i>{super().render_html()}</i>"  # should be render_html?
+    @property
+    def html(self) -> str:
+        return f"<i>{super().html}</i>"  # should be html?
 
 
 class Bold(Text):
     """Bold text token."""
 
-    def render_html(self) -> str:
-        return f"<b>{super().render_html()}</b>"
+    @property
+    def html(self) -> str:
+        return f"<b>{super().html}</b>"
 
 
 class Color(Text):
@@ -161,8 +170,38 @@ class Color(Text):
         super().__init__(text=text, *args)
         self.color = color
 
-    def render_html(self) -> str:
-        return f"<div style='color: {self.color};'>{super().render_html()}</div>"
+    @property
+    def html(self) -> str:
+        return f"<div style='color: {self.color};'>{super().html}</div>"
+
+
+class Badge(Text):
+    """Badge token
+
+    Rendered as a Bootstrap badge in HTML, plaintext otherwise.
+    """
+
+    style: Optional[str]  # TODO: make this an enum
+    bg_color: str  # bootstrap styles: primary, secondary, etc.
+
+    def __init__(
+        self,
+        text: Union[TextLike, str] = "",
+        *args,
+        style: Optional[str] = None,
+        bg_color: str = "primary",
+    ) -> None:
+        super().__init__(text=text, *args)
+        self.style = style
+        self.bg_color = bg_color
+
+    @property
+    def html(self) -> str:
+        if self.style:
+            s = f" {self.style}"
+        else:
+            s = ""
+        return f"<span class='badge{s} bg-{self.bg_color}'>{super().html}</span>"
 
 
 def _text_validator(cls, value: Any) -> Text:
