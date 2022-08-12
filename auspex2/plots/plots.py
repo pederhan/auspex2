@@ -87,7 +87,7 @@ def piechart_severity(
 
     data["country"] = data["country"].map(lambda x: Severity(x).name)
     data["angle"] = data["value"] / data["value"].sum() * 2 * pi
-    data["color"] = RdYlGn[len(distribution)]
+    data["color"] = plotdata.colors
 
     p = figure(
         height=350,
