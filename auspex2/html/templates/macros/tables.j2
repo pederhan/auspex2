@@ -12,7 +12,7 @@
         {% for row in tb.rows %}
         <tr>
             {% for col in row -%}
-            <td>{{ col.render_html() | safe }}</td>
+            <td>{{ col.html | safe }}</td>
             {%- endfor %}
         </tr>
         {%- endfor %}

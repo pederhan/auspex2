@@ -1,15 +1,15 @@
 {% macro plot(pt) -%}
-<h1>{{ pt.title.render_html() | safe }}</h1>
+<h1>{{ pt.title.html | safe }}</h1>
 <div>
     <!-- <figure class="figure">
         <img src="{{ pt.path }}" class="figure-img img-fluid rounded" alt="{{ pt.title }}">
         {% if pt.caption %}
-        <figcaption class="figure-caption">{{ pt.caption.render_html() | safe }}</figcaption>
+        <figcaption class="figure-caption">{{ pt.caption.html | safe }}</figcaption>
         {% endif %}
     </figure> -->
     {% if pt.embeddable %}
     {{ pt.div | safe}}
     {% endif %}
-    <p>{{ pt.description.render_html() | safe }}</p>
+    <p>{{ pt.description.html | safe }}</p>
 </div>
 {%- endmacro %}
