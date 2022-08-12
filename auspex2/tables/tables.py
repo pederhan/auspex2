@@ -6,8 +6,9 @@ from ..api import ArtifactInfo
 from ..colors import COLOR_BAD, COLOR_GOOD, get_color_cvss
 from ..cve import most_severe
 from ..format import format_decimal
+from ..html.cve import severity_to_colorclass
 from ..report import ArtifactCVSS, ArtifactReport
-from ..text import Color, Hyperlink, Text
+from ..text import Badge, Color, Hyperlink, Text
 from .models import Table
 
 
@@ -210,7 +211,9 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
             score_color = get_color_cvss(score)
 
             # Severity
-            severity = vuln.get_severity(a.report.scanner).name.title()
+            # severity = vuln.get_severity(a.report.scanner).name.title()
+            severity = vuln.get_severity_highest(a.report.scanner)
+            severity_str = severity.name.title()
 
             # Upgradable
             upgradable = "Yes" if vuln.fixable else "No"
@@ -221,7 +224,7 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
                 Text(description),
                 url,
                 Color(format_decimal(score), color=score_color),  # TODO: format
-                Text(severity),
+                Badge(severity_str, bg_color=severity_to_colorclass(severity)),
                 Color(upgradable, color=upg_color),
             ]
             rows.append(row)
@@ -237,4 +240,9 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
     if fixable:
         description += "Only vulnerabilities that are fixable are listed."
 
-    return Table(title=title, header=header, rows=rows, description=description)
+    return Table(
+        title=title,
+        header=header,
+        rows=rows,
+        description=description,
+    )
