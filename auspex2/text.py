@@ -20,10 +20,6 @@ __all__ = [
 class TextLike(Protocol):
     """Protocol for objects that can be rendered as text."""
 
-    @property
-    def text(self) -> Any:
-        ...
-
     def __bool__(self) -> bool:
         ...
 
@@ -72,22 +68,19 @@ class Stringable(Protocol):
 def token_to_text(text: Union[TextLike, str, Stringable]) -> TextLike:
     if isinstance(text, TextLike):
         return text
-    return _TextToken(text=text)
+    return _TextToken(text)
 
 
 class Text:
     """A plain text token (???)"""
 
     text: TextLike  # define type for str, int, etc.
-    _tokens: List[TextLike] = []
+    _tokens: List[TextLike]
 
-    # __slots__ = ("text",)
-
-    def __init__(self, text: Union[TextLike, str, Stringable] = "", *args) -> None:
-        self.text = token_to_text(text)
-        self._tokens = [self.text]
-        for arg in args:
-            self._tokens.append(token_to_text(arg))
+    def __init__(self, *text: Union[TextLike, str, Stringable]) -> None:
+        self._tokens = []
+        for t in text:
+            self._tokens.append(token_to_text(t))
 
     def __bool__(self) -> bool:
         return any(bool(token) for token in self._tokens)
@@ -102,10 +95,8 @@ class Text:
         if isinstance(other, TextLike):
             t = other
         else:
-            t = self.__class__(text=other)
-        self._tokens.append(t)  # FIXME: VERY BAD! REMOVE
-        # TODO: return new instance with modified ._tokens
-        return self
+            t = self.__class__(other)
+        return self.__class__(*(self._tokens + t._tokens))
 
     @property
     def plain(self) -> str:
@@ -126,17 +117,23 @@ class Hyperlink(Text):
 
     # __slots__ = ("text", "url")
 
-    def __init__(self, text: Union[TextLike, str] = "", url: str = "") -> None:
-        super().__init__(text=text)
+    def __init__(
+        self,
+        *text: Union[str, TextLike],
+        url: str = "",
+    ) -> None:
+        super().__init__(*text)
         self.url = url
 
     def __add__(self, other: Union[str, TextLike]) -> "Hyperlink":
         """Adds a string or another Hyperlink to the current Hyperlink.
         If current hyperlink URL is empty, it is replaced by the other Hyperlink URL."""
-        super().__add__(other)
+        new_obj = super().__add__(other)
         if not self.url and isinstance(other, Hyperlink):
-            self.url = other.url
-        return self
+            url = other.url
+        else:
+            url = self.url
+        return self.__class__(*new_obj._tokens, url=url)
 
     @property
     def html(self) -> str:
@@ -164,10 +161,8 @@ class Color(Text):
 
     color: str = "black"
 
-    def __init__(
-        self, text: Union[TextLike, str] = "", color: str = "black", *args
-    ) -> None:
-        super().__init__(text=text, *args)
+    def __init__(self, *text: Union[TextLike, str], color: str = "black") -> None:
+        super().__init__(*text)
         self.color = color
 
     @property
@@ -186,12 +181,11 @@ class Badge(Text):
 
     def __init__(
         self,
-        text: Union[TextLike, str] = "",
-        *args,
+        *text: Union[TextLike, str],
         style: Optional[str] = None,
         bg_color: str = "primary",
     ) -> None:
-        super().__init__(text=text, *args)
+        super().__init__(*text)
         self.style = style
         self.bg_color = bg_color
 
