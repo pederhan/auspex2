@@ -114,3 +114,46 @@ def test_textlike():
 
         text = cls()
         assert not text
+
+
+def test_textlike_add():
+    """Tests that all TextLike classes can be added together and yields
+    the expected results."""
+    classes = [
+        Text,
+        Hyperlink,
+        Italics,
+        Bold,
+        Color,
+        Badge,
+    ]
+
+    for cls in classes:
+        hello = cls("Hello, ")
+        for other in classes:
+            text = hello + other("world!")
+            assert text
+            assert isinstance(text, TextLike)
+            assert text.plain == "Hello, world!"
+
+
+def test_textlike_add_multiple():
+    """Tests that all TextLike classes can be added together multiple times."""
+
+    classes = [
+        Text,
+        Hyperlink,
+        Italics,
+        Bold,
+        Color,
+        Badge,
+    ]
+    for cls in classes:
+        text = cls("0")
+        text += Text("1")
+        text += Hyperlink("2", url="https://google.com")
+        text += Italics("3")
+        text += Bold("4")
+        text += Color("5", color="red")
+        text += Badge("6")
+        assert text.plain == "0123456"
