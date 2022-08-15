@@ -10,12 +10,16 @@
 {%- endfor %}
 
 {% for t in ttables -%}
-{{ tables.table(t) }}
+<div class="report-section">
+    {{ tables.table(t) }}
+</div>
 {%- endfor %}
 
 <!-- Insert Bokeh script targets -->
 {% for plt in pplots -%}
-{{ plots.plot(plt) }}
+<div class="report-section">
+    {{ plots.plot(plt) }}
+</div>
 {%- endfor %}
 
 {% endblock %}
