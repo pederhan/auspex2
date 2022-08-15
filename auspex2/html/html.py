@@ -26,7 +26,7 @@ def mount_static_dir(app: FastAPI) -> None:
 
 def _route_is_added(app: FastAPI, route: str) -> bool:
     for r in app.routes:
-        if r.path == route:
+        if hasattr(r, "path") and r.path == route:
             return True
     return False
 
