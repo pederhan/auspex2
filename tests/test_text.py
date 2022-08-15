@@ -68,6 +68,8 @@ def test_hyperlink_add():
     assert text.url == "https://google.com"
 
     text2 = Hyperlink("Hello, ", url="https://google.com") + "world!"
+    assert text2.plain == "Hello, world!"
+    assert text2.html == "<a href='https://google.com'>Hello, world!</a>"
 
 
 def test_color():
