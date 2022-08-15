@@ -74,7 +74,6 @@ def token_to_text(text: Union[TextLike, str, Stringable]) -> TextLike:
 class Text:
     """A plain text token (???)"""
 
-    text: TextLike  # define type for str, int, etc.
     _tokens: List[TextLike]
 
     def __init__(self, *text: Union[TextLike, str, Stringable]) -> None:

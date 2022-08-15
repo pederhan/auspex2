@@ -202,7 +202,7 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
             # url = vuln.url or "-"
             vuln_id = vuln.id or ""
             url = Hyperlink(
-                text=vuln_id,
+                vuln_id,
                 url="https://nvd.nist.gov/vuln/detail/{}".format(vuln_id),
             )
 
