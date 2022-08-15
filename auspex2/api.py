@@ -19,6 +19,33 @@ class ArtifactInfo(BaseModel):
     # NOTE: add Project?
 
 
+async def get_image(
+    client: HarborAsyncClient, repo: str, tag: Optional[str] = None
+) -> Optional[ArtifactInfo]:
+    artifacts = await get_artifacts(client)
+    return await _filter_artifact(artifacts, repo, tag)
+
+
+async def _filter_artifact(
+    artifacts: List[ArtifactInfo], repo: str, tag: Optional[str]
+) -> Optional[ArtifactInfo]:
+    matches = [a for a in artifacts if a.repository.project_name == repo]
+    if not matches:
+        return None
+
+    if not tag:
+        has_date = [m for m in matches if m.artifact.push_time]
+        return sorted(has_date, key=lambda m: m.artifact.push_time)[-1]  # type: ignore # guaranteed to have push_time
+
+    for m in matches:
+        if not m.artifact.tags:
+            continue
+        for t in m.artifact.tags:
+            if t and t.name == tag:
+                return m
+    return None
+
+
 async def get_artifacts(
     client: HarborAsyncClient,
     repos: Optional[List[Repository]] = None,
