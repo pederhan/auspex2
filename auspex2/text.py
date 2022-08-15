@@ -3,9 +3,15 @@
 
 # FIXME: this module is a mess! I am VERY bad at parsing/tokenizing!
 
+from sys import version_info
 from typing import Any, List, Optional, Protocol, TypeVar, Union, runtime_checkable
 
 from pydantic import validator
+
+if version_info >= (3, 11):
+    from typing import Self  # type: ignore
+else:
+    from typing_extensions import Self
 
 __all__ = [
     "Text",
@@ -13,6 +19,7 @@ __all__ = [
     "Italics",
     "Bold",
     "Color",
+    "Badge",
 ]
 
 
@@ -90,12 +97,12 @@ class Text:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.plain}>"
 
-    def __add__(self, other: Union[str, TextLike]) -> TextLike:
+    def __add__(self, other: Union[str, TextLike]) -> Self:  # type: ignore # https://github.com/python/mypy/pull/11666
         if isinstance(other, TextLike):
             t = other
         else:
             t = self.__class__(other)
-        return self.__class__(*(self._tokens + t._tokens))
+        return self.__class__(*(self._tokens), t)
 
     @property
     def plain(self) -> str:
@@ -129,10 +136,10 @@ class Hyperlink(Text):
         If current hyperlink URL is empty, it is replaced by the other Hyperlink URL."""
         new_obj = super().__add__(other)
         if not self.url and isinstance(other, Hyperlink):
-            url = other.url
+            new_obj.url = other.url
         else:
-            url = self.url
-        return self.__class__(*new_obj._tokens, url=url)
+            new_obj.url = self.url
+        return new_obj
 
     @property
     def html(self) -> str:
