@@ -93,3 +93,24 @@ def test_badge():
 
     text = Badge("Hello, world!", bg_color="secondary")
     assert text.html == "<span class='badge bg-secondary'>Hello, world!</span>"
+
+
+def test_textlike():
+    """Tests that all expected TextLike methods are implemented and
+    they pass isinstance checks."""
+    classes = [
+        Text,
+        Hyperlink,
+        Italics,
+        Bold,
+        Color,
+        Badge,
+    ]
+    for cls in classes:
+        text = cls("Hello, world!")
+        assert text
+        assert isinstance(text, TextLike)
+        assert text.plain == "Hello, world!"
+
+        text = cls()
+        assert not text
