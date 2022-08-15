@@ -159,7 +159,7 @@
     <hr>
     <ul class="nav nav-pills flex-column mb-auto">
         <li class="nav-item">
-            <a href="#" class="nav-link {% if request.url.path == '/' %} active {% else %} text-white {% endif %}"
+            <a href="/" class="nav-link {% if request.url.path == '/' %} active {% else %} text-white {% endif %}"
                 aria-current="page">
                 <svg class="bi pe-none me-2" width="16" height="16">
                     <use xlink:href="#home" />
@@ -168,7 +168,7 @@
             </a>
         </li>
         <li>
-            <a href="#"
+            <a href="/dashboard"
                 class="nav-link {% if request.url.path == '/dashboard' %} active {% else %} text-white {% endif %}">
                 <svg class="bi pe-none me-2" width="16" height="16">
                     <use xlink:href="#speedometer2" />
@@ -177,7 +177,7 @@
             </a>
         </li>
         <li>
-            <a href="#"
+            <a href="/projects"
                 class="nav-link {% if request.url.path == '/projects' %} active {% else %} text-white {% endif %}">
                 <svg class="bi pe-none me-2" width="16" height="16">
                     <use xlink:href="#table" />
@@ -186,7 +186,7 @@
             </a>
         </li>
         <li>
-            <a href="#"
+            <a href="/images"
                 class="nav-link {% if request.url.path == '/images' %} active {% else %} text-white {% endif %}">
                 <svg class="bi pe-none me-2" width="16" height="16">
                     <use xlink:href="#table" />
@@ -195,7 +195,7 @@
             </a>
         </li>
         <li>
-            <a href="#"
+            <a href="/reports"
                 class="nav-link {% if request.url.path == '/reports' %} active {% else %} text-white {% endif %}">
                 <svg class="bi pe-none me-2" width="16" height="16">
                     <use xlink:href="#grid" />
