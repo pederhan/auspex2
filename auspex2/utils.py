@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Iterable, List, cast
+from typing import Iterable, List, TypeVar, Union, cast
 
 from harborapi.models.scanner import (
     HarborVulnerabilityReport,
@@ -58,7 +58,7 @@ def plotdata_from_dist(distribution: Counter[Severity]) -> PlotData[Severity, in
         Plot data where `.labels` are the severities and `.values` are the counts.
         `.colors` are set to the severity colors, as defined by the `colors` module.
     """
-    p = PlotData()
+    p = PlotData()  # type: PlotData[Severity, int]
     # "dumb" iteration to ensure order is correct (not necessary?)
     distrib_sorted = sort_distribution(distribution)
     for severity, count in distrib_sorted:

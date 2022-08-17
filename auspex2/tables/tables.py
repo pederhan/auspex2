@@ -2,10 +2,10 @@ from typing import Optional, Union
 
 from harborapi.models.scanner import Severity
 
-from ..api import ArtifactInfo
 from ..colors import COLOR_BAD, COLOR_GOOD, get_color_cvss
 from ..cve import most_severe
 from ..format import format_decimal
+from ..harbor.api import ArtifactInfo
 from ..html.cve import severity_to_colorclass
 from ..report import ArtifactCVSS, ArtifactReport
 from ..text import Badge, Color, Hyperlink, Text
@@ -66,9 +66,16 @@ def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table
         else:
             repo_name = "-"
 
+        # image hyperlink
+        # NOTE: digest might be None (probably will never be?)
+        image_link = Hyperlink(
+            repo_name,
+            url=f"/projects/{a.repository.project_name}/{a.repository.base_name}/{a.artifact.digest}",
+        )
+
         rows.append(
             [
-                Text(repo_name),
+                image_link,
                 Text(created),
                 Text(tags),
                 Text(digest),
@@ -179,11 +186,13 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
     """
     header = [
         "Image",
-        "Vulnerability",  # Name
+        "Package",
+        "Version",
+        "Description",  # Description
         "CVSS ID",  # ID
         "CVSS Score",  # 0-10
         "Severity",
-        "Upgradable",  # Yes/No
+        "Fixed In",
     ]
 
     rows = []
@@ -193,7 +202,9 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
         most_severe = a.report.top_vulns(maxrows, fixable=fixable)
         for vuln in most_severe:
             # Image name (repo)
-            name = a.repository.name or "-"
+            image_name = a.repository.name or "-"
+
+            package = vuln.package or "-"
 
             # Vuln description
             description = vuln.description or "-"
@@ -215,17 +226,18 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
             severity = vuln.get_severity_highest(a.report.scanner)
             severity_str = severity.name.title()
 
-            # Upgradable
-            upgradable = "Yes" if vuln.fixable else "No"
-            upg_color = COLOR_GOOD if vuln.fixable else COLOR_BAD
+            affected_version = vuln.version or ""
+            upgrade_version = vuln.fix_version or ""
 
             row = [
-                Text(name),
-                Text(description),
+                Text(image_name),  # Image name
+                Text(package),  # Package
+                Text(affected_version),
+                Text(description),  # Description
                 url,
                 Color(format_decimal(score), color=score_color),  # TODO: format
                 Badge(severity_str, bg_color=severity_to_colorclass(severity)),
-                Color(upgradable, color=upg_color),
+                Color(upgrade_version, color=COLOR_GOOD),
             ]
             rows.append(row)
 

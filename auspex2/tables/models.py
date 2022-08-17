@@ -30,6 +30,7 @@ class Table(BaseModel):
         rows = values.get("rows", [])
         header = values.get("header", [])
         if rows and len(header) != len(rows[0]):
+            # NOTE: check all rows?
             raise ValueError("header and rows must be the same length")
         return values
 

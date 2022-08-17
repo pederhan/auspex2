@@ -1,7 +1,8 @@
 import itertools
 from collections import Counter
 from dataclasses import dataclass
-from typing import Iterable, List
+from datetime import datetime
+from typing import Iterable, List, Tuple
 
 from harborapi.models import Artifact
 from harborapi.models.scanner import (
@@ -11,8 +12,8 @@ from harborapi.models.scanner import (
 )
 
 from . import npmath
-from .api import ArtifactInfo
 from .cve import CVSS
+from .harbor.api import ArtifactInfo
 
 
 @dataclass
@@ -39,6 +40,8 @@ def remove_duplicate_artifacts(artifacts: List[ArtifactInfo]) -> Iterable[Artifa
 # @dataclass
 # TODO: rename to something more appropriate
 class ArtifactReport:
+    """A report for one or more artifacts."""
+
     artifacts: List[ArtifactInfo]
 
     def __init__(
@@ -117,6 +120,18 @@ class ArtifactReport:
         for a in self.artifacts:
             for v in a.report.vulnerabilities_by_severity(severity):
                 yield Vulnerability(v, a)
+
+    def get_vulns_age_score_color(
+        self,
+    ) -> Tuple[List[datetime], List[float], List[float]]:
+        """Get a scatter plot of the age of the artifacts vs. the CVSS score."""
+        ages = []  # type: List[datetime]
+        scores = []  # type: List[float]
+        colors = []  # type: List[float]
+        raise NotImplementedError(
+            "Not possible until Trivy includes the publication date of the CVE"
+        )
+        return ages, scores, colors
 
 
 # TODO: add test to ensure parity with HarborVulnerabilityReport

@@ -26,7 +26,7 @@ def mount_static_dir(app: FastAPI) -> None:
 
 def _route_is_added(app: FastAPI, route: str) -> bool:
     for r in app.routes:
-        if hasattr(r, "path") and r.path == route:
+        if hasattr(r, "path") and r.path == route:  # type: ignore # mypy complains about r.path even with hasattr(...)
             return True
     return False
 

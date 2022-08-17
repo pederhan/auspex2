@@ -5,4 +5,5 @@ The artist formerly known as [Auspex](https://github.com/auspex-ntnu/auspex).
 
 ## TODO
 
-- [ ] Render plots in browser with [bokeh](https://bokeh.org/)
+- [x] Render plots in browser with [bokeh](https://bokeh.org/)
+- [ ] CVE allowlist/blocklist

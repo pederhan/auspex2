@@ -1,0 +1,6 @@
+def render_projects():
+    ...
+
+
+def render_repositories():
+    ...
