@@ -16,11 +16,7 @@ from typing import (
 )
 
 from pydantic import validator
-
-if version_info >= (3, 11):
-    from typing import Self  # type: ignore
-else:
-    from typing_extensions import Self
+from typing_extensions import Self
 
 __all__ = [
     "Text",
