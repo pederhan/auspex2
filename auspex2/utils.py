@@ -1,15 +1,11 @@
 from collections import Counter
-from typing import TYPE_CHECKING, Iterable, List, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Iterable
 
-from harborapi.models.scanner import (
-    HarborVulnerabilityReport,
-    Severity,
-    VulnerabilityItem,
-)
+from harborapi.models.scanner import Severity
 
 from .colors import get_color_severity
 from .cve import sort_distribution
-from .npmath import mean, median, stdev
+from .report.plots.models import PlotData
 
 if TYPE_CHECKING:
     from .report import Vulnerability
