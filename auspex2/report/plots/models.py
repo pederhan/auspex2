@@ -3,8 +3,9 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel
+from pydantic import Field
 
+from ..section import Section, SectionType
 from ..text import Text, text_validator
 
 T = TypeVar("T")
@@ -33,22 +34,16 @@ class PlotData(Generic[T, S]):
         return {label: value for label, value in zip(self.labels, self.values)}
 
 
-class Plot(BaseModel):
-    title: Union[Text, str]
+class Plot(Section):
     plot_type: PlotType
-    description: Union[Text, str] = Text()
-    caption: Union[Text, str] = Text()
     path: Optional[Path] = None
     script: Optional[str] = None
     div: Optional[str] = None
+    section_type: SectionType = Field(SectionType.PLOT, allow_mutation=False)
 
     class Config:
         arbitrary_types_allowed = True
         validate_assignment = True
-
-    _title_validator = text_validator("title")
-    _description_validator = text_validator("description")
-    _caption_validator = text_validator("caption")
 
     @property
     def embeddable(self) -> bool:

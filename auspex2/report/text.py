@@ -4,7 +4,16 @@
 # FIXME: this module is a mess! I am VERY bad at parsing/tokenizing!
 
 from sys import version_info
-from typing import Any, List, Optional, Protocol, TypeVar, Union, runtime_checkable
+from typing import (
+    Any,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    runtime_checkable,
+)
 
 from pydantic import validator
 
@@ -135,6 +144,7 @@ class Hyperlink(Text):
         """Adds a string or another Hyperlink to the current Hyperlink.
         If current hyperlink URL is empty, it is replaced by the other Hyperlink URL."""
         new_obj = super().__add__(other)
+        new_obj = cast(Hyperlink, new_obj)  # satisfy mypy (bug [i think])
         if not self.url and isinstance(other, Hyperlink):
             new_obj.url = other.url
         else:

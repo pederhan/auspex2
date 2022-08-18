@@ -2,14 +2,28 @@ from typing import Optional, Union
 
 from harborapi.models.scanner import Severity
 
-from ..colors import COLOR_BAD, COLOR_GOOD, get_color_cvss
-from ..cve import most_severe
-from ..format import format_decimal
-from ..harbor.api import ArtifactInfo
-from ..html.cve import severity_to_colorclass
+from ...colors import COLOR_BAD, COLOR_GOOD, get_color_cvss
+from ...cve import most_severe
+from ...format import format_decimal
+from ...harbor.api import ArtifactInfo
+from ...html.cve import severity_to_colorclass
 from ..report import ArtifactCVSS, ArtifactReport
 from ..text import Badge, Color, Hyperlink, Text
 from .models import Table
+
+
+# TODO: move these functions
+def _get_artifact_url(artifact: ArtifactInfo) -> str:
+    """Returns the URL for an artifact."""
+    return f"/projects/{artifact.repository.project_name}/{artifact.repository.base_name}/{artifact.artifact.digest}"
+
+
+def artifact_hyperlink(artifact: ArtifactInfo) -> Hyperlink:
+    """Returns a hyperlink for an artifact."""
+    return Hyperlink(
+        artifact.repository.name or "-",
+        url=_get_artifact_url(artifact),
+    )
 
 
 def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table:
@@ -75,7 +89,7 @@ def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table
 
         rows.append(
             [
-                image_link,
+                artifact_hyperlink(a),
                 Text(created),
                 Text(tags),
                 Text(digest),
@@ -125,7 +139,6 @@ def cve_statistics(report: ArtifactReport) -> Table:
     rows = []
     for c in report.cvss:
         # Columns:
-        name = c.artifact.repository.name or "-"
         dist = c.artifact.report.distribution
 
         # Total number of vulnerabilities
@@ -136,7 +149,7 @@ def cve_statistics(report: ArtifactReport) -> Table:
         total = low + medium + high + critical
 
         row = [
-            Text(name),
+            artifact_hyperlink(c.artifact),
             # Color(format_decimal(c.cvss.median), color=get_color_cvss(c.cvss.median)),
             # Color(format_decimal(c.cvss.mean), color=get_color_cvss(c.cvss.mean)),
             # Color(format_decimal(c.cvss.stdev), color=get_color_cvss(c.cvss.stdev)),
@@ -230,7 +243,7 @@ def top_vulns(report: ArtifactReport, fixable: bool = False, maxrows: int = 5) -
             upgrade_version = vuln.fix_version or ""
 
             row = [
-                Text(image_name),  # Image name
+                artifact_hyperlink(a),
                 Text(package),  # Package
                 Text(affected_version),
                 Text(description),  # Description

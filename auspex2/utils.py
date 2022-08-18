@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Iterable, List, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Iterable, List, TypeVar, Union, cast
 
 from harborapi.models.scanner import (
     HarborVulnerabilityReport,
@@ -10,16 +10,17 @@ from harborapi.models.scanner import (
 from .colors import get_color_severity
 from .cve import sort_distribution
 from .npmath import mean, median, stdev
-from .plots import PlotData
-from .report import Vulnerability
+
+if TYPE_CHECKING:
+    from .report import Vulnerability
 
 
-def get_distribution(vulnerabilities: Iterable[Vulnerability]) -> Counter[Severity]:
+def get_distribution(vulnerabilities: Iterable["Vulnerability"]) -> Counter[Severity]:
     """Get a counter showing the distribution of severities from a list of vulnerabilities.
 
     Parameters
     ----------
-    vulnerabilities : List[VulnerabilityItem]
+    vulnerabilities : List[Vulnerability]
         The vulnerabilities to count.
 
     Returns

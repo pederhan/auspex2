@@ -11,9 +11,9 @@ from harborapi.models.scanner import (
     VulnerabilityItem,
 )
 
-from . import npmath
-from .cve import CVSS
-from .harbor.api import ArtifactInfo
+from .. import npmath
+from ..cve import CVSS
+from ..harbor.api import ArtifactInfo
 
 
 @dataclass

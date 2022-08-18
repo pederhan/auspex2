@@ -2,24 +2,18 @@ from typing import Any, Dict, Union
 
 from pydantic import BaseModel, Field, root_validator
 
+from ..section import Section, SectionType
 from ..text import Text, text_validator
 
 
-class Table(BaseModel):
-    # TODO: make use of Text
-    title: Union[str, Text]
+class Table(Section):
     header: list[Text] = Field(default_factory=list)  # column names
     rows: list[list[Text]] = Field(
         default_factory=list
     )  # each row is a list of len(header)
-    caption: Union[str, Text] = Text()
-    description: Union[str, Text] = Text()
-    # TODO: add rich description class
+    section_type: SectionType = Field(default=SectionType.TABLE, allow_mutation=False)
 
-    _title_validator = text_validator("title")
     _header_validator = text_validator("header", each_item=True)
-    _caption_validator = text_validator("caption")
-    _description_validator = text_validator("description")
 
     class Config:
         arbitrary_types_allowed = True

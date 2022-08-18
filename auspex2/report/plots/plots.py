@@ -12,10 +12,10 @@ from bokeh.transform import cumsum
 from harborapi.models.scanner import Severity
 from sanitize_filename import sanitize
 
-from ..harbor.api import ArtifactInfo
+from ...harbor.api import ArtifactInfo
+from ...utils import get_distribution, plotdata_from_dist
 from ..report import ArtifactReport
 from ..text import Text
-from ..utils import get_distribution, plotdata_from_dist
 from .models import PieChartStyle, Plot, PlotType
 
 

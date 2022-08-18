@@ -9,17 +9,16 @@
 {% endif %}
 {%- endfor %}
 
-{% for t in ttables -%}
+{% for section in layout.sections %}
 <div class="report-section">
-    {{ tables.table(t) }}
+    {% if section.section_type.value == "table" %}
+    {{ tables.table(section) }}
+    {% elif section.section_type.value == "plot" %}
+    {{ plots.plot(section) }}
+    {% elif section.section_type.value == "text" %}
+    TODO: implement text section rendering
+    {% endif %}
 </div>
-{%- endfor %}
-
-<!-- Insert Bokeh script targets -->
-{% for plt in pplots -%}
-<div class="report-section">
-    {{ plots.plot(plt) }}
-</div>
-{%- endfor %}
+{% endfor %}
 
 {% endblock %}

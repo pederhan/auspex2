@@ -1,4 +1,4 @@
-from auspex2.text import (
+from auspex2.report.text import (
     Badge,
     Bold,
     Color,

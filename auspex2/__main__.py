@@ -21,9 +21,10 @@ from .harbor.api import (
     get_projects,
 )
 from .html import TEMPLATES, mount_static_dir
-from .plots import PieChartStyle, piechart_severity
 from .report import ArtifactReport
-from .tables.tables import cve_statistics, image_info, top_vulns
+from .report.layout import EmptyPage, ReportLayout
+from .report.plots import PieChartStyle, piechart_severity
+from .report.tables.tables import cve_statistics, image_info, top_vulns
 
 # TODO: warn if these are not defined
 client = HarborAsyncClient(
@@ -74,6 +75,7 @@ async def report_artifact(
     artifact = await get_artifact_by_digest(client, project, repo, tag, digest)
     if not artifact:
         wtag = f" with tag {tag}" if tag else ""
+        # TODO: raise HTTPException?
         return HTMLResponse(f"No artifact in repo {repo}{wtag} found", status_code=404)
     return await report_page(request, [artifact])
 
@@ -83,8 +85,7 @@ async def report_page(request: Request, artifacts: List[ArtifactInfo]):
         return TEMPLATES.TemplateResponse(
             "report.html",
             {
-                "ttables": [],
-                "pplots": [],
+                "layout": EmptyPage(),
                 "request": request,
             },
         )
@@ -96,29 +97,25 @@ async def report_page(request: Request, artifacts: List[ArtifactInfo]):
 
     styles = [PieChartStyle.DEFAULT, PieChartStyle.FIXABLE, PieChartStyle.UNFIXABLE]
 
-    # for artifact in artifacts:
-    plots = []  # type List[Plot]
-    for style in styles:
-        p = piechart_severity(
-            report,
-            directory=directory,
-            style=style,
-            as_html=True,
-        )
-        plots.append(p)
-
-    stable = cve_statistics(report)
-    itable = image_info(report)
-    tvtable = top_vulns(report)
-    tvtable_fix = top_vulns(report, fixable=True)
-
-    # with open(public_dir / "report.html", "w") as f:
-    #     f.write(html)
+    layout = ReportLayout(
+        stats_t=cve_statistics(report),
+        info_t=image_info(report),
+        top_vulns_t=top_vulns(report),
+        top_vulns_t_fix=top_vulns(report, fixable=True),
+        vuln_p=[
+            piechart_severity(
+                report,
+                directory=directory,
+                style=style,
+                as_html=True,
+            )
+            for style in styles
+        ],
+    )
     return TEMPLATES.TemplateResponse(
         "report.html",
         {
-            "ttables": [itable, stable, tvtable, tvtable_fix],
-            "pplots": plots,
+            "layout": layout,
             "request": request,
         },
     )
@@ -130,7 +127,7 @@ async def projects_page(request: Request):
 
     start = time.time()
     projects = await get_projects(client)
-    logger.info(f"Got {len(projects)} projects in {time.time() - start} seconds")
+    logger.debug(f"Got {len(projects)} projects in {time.time() - start} seconds")
     return TEMPLATES.TemplateResponse(
         "projects.html", {"projects": projects, "request": request}
     )
@@ -157,7 +154,7 @@ async def test_cache(request: Request, key: str = "foo", value: str = "bar"):
     cache = await get_cache()
     cached = await cache.get(key)
     if cached:
-        logger.info("Fetched '{}' from cache for key '{}'", cached, key)
+        logger.debug("Fetched '{}' from cache for key '{}'", cached, key)
     else:
         await cache.set(key, value)
     return {"key": key, "value": value}
