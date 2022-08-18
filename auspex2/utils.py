@@ -1,5 +1,4 @@
 import sys
-from collections import Counter
 from typing import TYPE_CHECKING, Iterable
 
 if sys.version_info < (3, 9):
