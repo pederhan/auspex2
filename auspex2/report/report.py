@@ -133,5 +133,23 @@ class ArtifactReport:
         )
         return ages, scores, colors
 
+    def with_cve(self, cve_id: str) -> List[ArtifactInfo]:
+        """Get all artifacts that have the given CVE."""
+        return [a for a in self.artifacts if a.has_cve(cve_id)]
+
+    def with_description(
+        self, description: str, case_sensitive: bool = False
+    ) -> List[ArtifactInfo]:
+        """Get all artifacts that have a vulnerability with the given description."""
+        return [
+            a for a in self.artifacts if a.has_description(description, case_sensitive)
+        ]
+
+    def with_package(
+        self, package: str, case_sensitive: bool = False
+    ) -> List[ArtifactInfo]:
+        """Get all artifacts that have a vulnerability with the given description."""
+        return [a for a in self.artifacts if a.has_package(package, case_sensitive)]
+
 
 # TODO: add test to ensure parity with HarborVulnerabilityReport
