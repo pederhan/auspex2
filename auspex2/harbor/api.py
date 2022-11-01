@@ -347,8 +347,25 @@ async def get_artifact_vulnerabilities(
     # getting all reports in one call.
     # This is done concurrently to speed up the process.
     coros = [_get_artifact_report(client, artifact) for artifact in artifacts]
-    artifacts = await asyncio.gather(*coros, return_exceptions=True)
+    artifacts = await run_coros(coros)
     return handle_gather(artifacts, exc_ok=exc_ok)
+
+
+async def run_coros(
+    coros: List[Coroutine[Any, Any, Any]],
+    batch_size: int = 5,
+    sleep_duration: float = 5.0,
+) -> List[Any]:
+    """Splits up a list of coroutines into smaller batches and runs each batch sequentially."""
+    results = []
+    coros_batched = [
+        coros[i : i + batch_size] for i in range(0, len(coros), batch_size)
+    ]
+    for coros in coros_batched:
+        res = await asyncio.gather(*coros, return_exceptions=True)
+        results.extend(res)
+        await asyncio.sleep(sleep_duration)  # sleep between batches
+    return results
 
 
 async def _get_artifact_report(
