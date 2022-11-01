@@ -17,7 +17,7 @@ from typing import (
 
 from harborapi import HarborAsyncClient
 from harborapi.exceptions import NotFound
-from harborapi.models import Artifact, Project, Repository
+from harborapi.models import Artifact, Project, Repository, UserResp
 from loguru import logger
 
 from ..cache import get_cached, set_cached
@@ -249,13 +249,7 @@ async def _get_repo_artifacts(
 
 async def get_projects(client: HarborAsyncClient) -> List[Project]:
     """Get all projects."""
-    ALL_KEY = "ALL_PROJECTS"
-    cached = await get_cached(Project, ALL_KEY)
-    if cached:
-        logger.debug(f"Got cached projects, key: '{ALL_KEY}'")
-        return cached
     projects = await client.get_projects()
-    await set_cached(Project, ALL_KEY, projects)
     return projects
 
 
@@ -284,17 +278,6 @@ async def get_repositories(
     rtn = await asyncio.gather(*coros, return_exceptions=True)
     return handle_gather(rtn, exc_ok=exc_ok)
 
-    # repos = []
-    # for repo_or_exc in rtn:
-    #     if isinstance(repo_or_exc, Exception):
-    #         if exc_ok:
-    #             logger.error(repo_or_exc)
-    #         else:
-    #             raise repo_or_exc
-    #     else:
-    #         repos.extend(repo_or_exc)
-    # return repos
-
 
 async def _get_project_repos(
     client: HarborAsyncClient, project: Optional[str]
@@ -313,13 +296,7 @@ async def _get_project_repos(
     List[Repository]
         A list of Repository objects.
     """
-    project_key = project or "ALL_PROJECTS"
-    cached = await get_cached(Repository, project_key)
-    if cached:
-        logger.debug(f"Got cached repositories, key: '{project_key}'")
-        return cached
     repos = await client.get_repositories(project_name=project)
-    await set_cached(Repository, project_key, repos)
     return repos
 
 

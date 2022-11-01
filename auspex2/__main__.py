@@ -9,9 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from harborapi import HarborAsyncClient
 from loguru import logger
-from redis import Redis
 
-from .cache import get_cache, get_cached, set_cached
 from .harbor.api import (
     ArtifactInfo,
     filter_artifacts_latest,
@@ -24,6 +22,7 @@ from .html import TEMPLATES, mount_static_dir
 from .report import ArtifactReport
 from .report.layout import EmptyPage, ReportLayout
 from .report.plots import PieChartStyle, piechart_severity
+from .report.section import MultiSection
 from .report.tables.tables import cve_statistics, image_info, top_vulns
 
 # TODO: warn if these are not defined
@@ -52,15 +51,11 @@ async def not_found(request: Request, exc: Exception):
 
 
 async def report_project(request: Request, project: str):
-    artifacts = await get_cached(ArtifactInfo, project)
-    if not artifacts:
-        artifacts = await get_artifact_vulnerabilities(
-            client,
-            projects=[project],
-            exc_ok=True,
-        )
-        await set_cached(ArtifactInfo, project, artifacts)
-
+    artifacts = await get_artifact_vulnerabilities(
+        client,
+        projects=[project],
+        exc_ok=True,
+    )
     artifacts = await filter_artifacts_latest(artifacts)
     return await report_page(request, artifacts)
 
@@ -144,20 +139,8 @@ async def get_artifact_report(
     project: str,
     repo: str,
     digest: str,
-    # cache: Cache = Depends(get_cache),
 ):
     return await report_artifact(request, project=project, repo=repo, digest=digest)
-
-
-@app.get("/cache")
-async def test_cache(request: Request, key: str = "foo", value: str = "bar"):
-    cache = await get_cache()
-    cached = await cache.get(key)
-    if cached:
-        logger.debug("Fetched '{}' from cache for key '{}'", cached, key)
-    else:
-        await cache.set(key, value)
-    return {"key": key, "value": value}
 
 
 @app.get("/allproj")
