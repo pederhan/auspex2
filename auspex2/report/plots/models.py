@@ -1,12 +1,11 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Dict, Generic, List, Optional, TypeVar, Union
 
 from pydantic import Field
 
 from ..section import Section, SectionType
-from ..text import Text, text_validator
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -39,7 +38,7 @@ class Plot(Section):
     path: Optional[Path] = None
     script: Optional[str] = None
     div: Optional[str] = None
-    section_type: SectionType = Field(SectionType.PLOT, allow_mutation=False)
+    section_type: SectionType = Field(default=SectionType.PLOT, allow_mutation=False)
 
     class Config:
         arbitrary_types_allowed = True

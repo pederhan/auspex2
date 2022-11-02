@@ -4,7 +4,7 @@ from typing import Iterable, List, Union
 from pydantic import BaseModel
 
 from .plots import Plot
-from .section import Section
+from .section import MultiSection, Section
 from .tables import Table
 
 
@@ -26,13 +26,13 @@ class ReportLayout(Layout):
     stats_t: Table
     info_t: Table
     top_vulns_t: Table
-    top_vulns_t_fix: Table
-    vuln_p: List[Plot]  # maybe refactor
+    top_vulns_fix_t: Table
+    vuln_p: MultiSection  # maybe refactor
 
     @property
     def sections(self) -> Iterable[Section]:
         yield self.stats_t
         yield self.info_t
-        yield from self.vuln_p
+        yield self.vuln_p
         yield self.top_vulns_t
-        yield self.top_vulns_t_fix
+        yield self.top_vulns_fix_t

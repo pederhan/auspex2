@@ -1,6 +1,6 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
 
 from ..section import Section, SectionType
 from ..text import Text, text_validator
