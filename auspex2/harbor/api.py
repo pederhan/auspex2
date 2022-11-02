@@ -15,12 +15,13 @@ from typing import (
     Union,
 )
 
+import backoff
 from harborapi import HarborAsyncClient
 from harborapi.exceptions import NotFound
 from harborapi.models import Artifact, Project, Repository, UserResp
+from httpx import TimeoutException
 from loguru import logger
 
-from ..cache import get_cached, set_cached
 from .artifact import ArtifactInfo
 
 T = TypeVar("T")
@@ -213,6 +214,9 @@ async def get_artifacts(
     # return list(itertools.chain.from_iterable(a))
 
 
+@backoff.on_exception(
+    backoff.expo, (TimeoutException, asyncio.TimeoutError), max_tries=5
+)
 async def _get_repo_artifacts(
     client: HarborAsyncClient, repo: Repository, tags: Optional[List[str]], **kwargs
 ) -> List[ArtifactInfo]:
@@ -449,3 +453,13 @@ def handle_gather(
             else:
                 ok.append(res_or_exc)
     return ok
+
+
+async def get_artifact_owner(client: HarborAsyncClient, artifact: Artifact) -> UserResp:
+    project_id = artifact.project_id
+    if project_id is None:
+        raise ValueError("Artifact has no project_id")
+    project = await client.get_project(project_id)
+    if project.owner_id is None:
+        raise ValueError("Project has no owner_id")
+    return await client.get_user(project.owner_id)
