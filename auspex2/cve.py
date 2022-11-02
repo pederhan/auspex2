@@ -36,7 +36,7 @@ def most_severe(severities: Iterable[Severity]) -> Severity:
     return CVE_PRIO[highest_idx]
 
 
-def sort_distribution(distribution: Counter[Severity]) -> List[Tuple[Severity, int]]:
+def sort_distribution(distribution: "Counter[Severity]") -> List[Tuple[Severity, int]]:
     """Sort the distribution of severities by severity."""
     return [
         (k, v)

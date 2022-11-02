@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from pydantic import Field, root_validator
 
@@ -7,8 +7,8 @@ from ..text import Text, text_validator
 
 
 class Table(Section):
-    header: list[Text] = Field(default_factory=list)  # column names
-    rows: list[list[Text]] = Field(
+    header: List[Text] = Field(default_factory=list)  # column names
+    rows: List[List[Text]] = Field(
         default_factory=list
     )  # each row is a list of len(header)
     section_type: SectionType = Field(default=SectionType.TABLE, allow_mutation=False)

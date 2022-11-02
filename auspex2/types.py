@@ -10,8 +10,8 @@ from numpy.typing import NDArray
 MplRGBAColor = NDArray[np.float64]  # shape: (4,)
 
 # Any number type we can pass to numpy
-# NOTE: why does list[float] and list[int] not pass as list[Union[Number, Real]]
-NumberType = Union[Number, Real, np.number[Any], float, int]
+# NOTE: why does List[float] and List[int] not pass as List[Union[Number, Real]]
+NumberType = Union[Number, Real, "np.number[Any]", float, int]
 
 
 class ReportType(Protocol):
@@ -45,5 +45,5 @@ class ReportType(Protocol):
         ...
 
     @property
-    def distribution(self) -> Counter[Severity]:
+    def distribution(self) -> "Counter[Severity]":
         ...

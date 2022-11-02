@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from harborapi.models.scanner import Severity
 
@@ -48,7 +48,7 @@ def image_info(report: ArtifactReport, digest_limit: Optional[int] = 8) -> Table
         "Digest",
     ]
 
-    rows = []  # type: list[list[Text]]
+    rows = []  # type: List[List[Text]]
     for a in report.artifacts:
         digest = "-"
 

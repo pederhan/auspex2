@@ -1,10 +1,8 @@
-import sys
-from typing import TYPE_CHECKING, Iterable
+from __future__ import annotations
 
-if sys.version_info < (3, 9):
-    from typing import Counter
-else:
-    from collections import Counter
+import sys
+from collections import Counter
+from typing import TYPE_CHECKING, Iterable
 
 from harborapi.models.scanner import Severity
 

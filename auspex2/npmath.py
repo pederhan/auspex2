@@ -30,7 +30,7 @@ def max(a: Iterable[Union[int, float]]) -> float:  # todo : fix type
 
 
 def _do_stats_math(
-    func: Callable[[Any], np.number[Any]],
+    func: Callable[[Any], "np.number[Any]"],
     a: Iterable[NumberType],
     default: float = 0.0,
 ) -> float:

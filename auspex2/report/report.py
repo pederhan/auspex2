@@ -106,7 +106,7 @@ class ArtifactReport:
         yield from self.vulnerabilities_by_severity(Severity.low)
 
     @property
-    def distribution(self) -> Counter[Severity]:
+    def distribution(self) -> "Counter[Severity]":
         """Get the distribution of severities from the vulnerabilities of all artifacts."""
         dist = Counter()  # type: Counter[Severity]
         for artifact in self.artifacts:

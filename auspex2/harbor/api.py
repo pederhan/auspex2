@@ -309,6 +309,8 @@ async def get_artifact_vulnerabilities(
     tags: Optional[List[str]] = None,
     projects: Optional[List[str]] = None,
     exc_ok: bool = False,
+    batch_size: Optional[int] = 5,
+    sleep_duration: Optional[float] = 1.0,
     **kwargs: Any,
 ) -> List[ArtifactInfo]:
     """Fetch all artifact vulnerability reports in all projects, optionally
@@ -324,6 +326,20 @@ async def get_artifact_vulnerabilities(
         The client to use for the API call.
     tags : Optional[List[str]]
         The tag(s) to filter the artifacts by.
+    projects : Optional[List[str]]
+        The project(s) to fetch artifacts from.
+        If not specified, all projects will be used.
+    exc_ok : bool
+        Whether or not to continue on error.
+        If True, the failed artifact is skipped, and the exception
+        is logged. If False, the exception is raised.
+    batch_size : Optional[int]
+        The number of requests to make in each batch.
+        If None, all requests will be made in a single batch.
+        WARNING: this will likely cause a DoS on the Harbor server.
+    sleep_duration : Optional[float]
+        The duration to sleep between batches of requests.
+        If None, the next batch is sent immediately.
     kwargs : Any
         Additional arguments to pass to the `HarborAsyncClient.get_artifacts` method.
 
@@ -351,24 +367,34 @@ async def get_artifact_vulnerabilities(
     # getting all reports in one call.
     # This is done concurrently to speed up the process.
     coros = [_get_artifact_report(client, artifact) for artifact in artifacts]
-    artifacts = await run_coros(coros)
+    artifacts = await run_coros(
+        coros, batch_size=batch_size, sleep_duration=sleep_duration
+    )
     return handle_gather(artifacts, exc_ok=exc_ok)
 
 
 async def run_coros(
     coros: List[Coroutine[Any, Any, Any]],
-    batch_size: int = 5,
-    sleep_duration: float = 5.0,
+    batch_size: Optional[int],
+    sleep_duration: Optional[float],
 ) -> List[Any]:
     """Splits up a list of coroutines into smaller batches and runs each batch sequentially."""
     results = []
-    coros_batched = [
-        coros[i : i + batch_size] for i in range(0, len(coros), batch_size)
-    ]
-    for coros in coros_batched:
+
+    # Divide coros into batches
+    if batch_size is not None:
+        coros_to_run = [
+            coros[i : i + batch_size] for i in range(0, len(coros), batch_size)
+        ]
+    else:
+        coros_to_run = [coros]
+
+    for coros in coros_to_run:
         res = await asyncio.gather(*coros, return_exceptions=True)
         results.extend(res)
-        await asyncio.sleep(sleep_duration)  # sleep between batches
+        if sleep_duration is not None:
+            await asyncio.sleep(sleep_duration)  # sleep between batches
+
     return results
 
 

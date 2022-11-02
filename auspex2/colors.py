@@ -5,7 +5,7 @@ from bokeh.palettes import Greys3, RdYlGn5
 from harborapi.models.scanner import Severity
 
 # set default palette and copy it, so we can modify its contents
-DEFAULT_PALETTE = list(RdYlGn5)  # type: list[str]
+DEFAULT_PALETTE = list(RdYlGn5)  # type: List[str]
 DEFAULT_PALETTE[2] = "#fadd02"
 
 SEVERITY_COLORS = {

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterator, Union
+from typing import Iterator, List, Union
 
 from pydantic import BaseModel, Field
 
@@ -36,7 +36,7 @@ class Section(BaseModel):
 
 
 class MultiSection(Section):
-    subsections: list[Section] = Field(default_factory=list)
+    subsections: List[Section] = Field(default_factory=list)
     html_wrapper: str = Field(default='<div class=col-3">{}</div>')
     row: bool = True  # all sections in same row
     section_type: SectionType = Field(default=SectionType.MULTI)
